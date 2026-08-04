@@ -1,0 +1,37 @@
+name: Pagefind 1.5.2 verified transfer
+
+on:
+  pull_request:
+    paths:
+      - 'pagefind-transfer/**'
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Download exact PyPI wheel and verify pinned SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+          file='pagefind_bin-1.5.2-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.musllinux_1_1_x86_64.whl'
+          url='https://files.pythonhosted.org/packages/40/cf/2a7608bd67242c3b7a2d3fc0ff238d9183287a63b1e6838ff26b351b4d2a/'"$file"
+          curl --fail --location --proto '=https' --tlsv1.2 --retry 5 --retry-all-errors --output "$file" "$url"
+          printf '%s  %s\n' '92eb3f492fc7dbf0fc68c18c78f8de44ecfb266ba64cb982e3ccc1b4bbd7203e' "$file" | sha256sum --check --strict
+          sha256sum "$file" > "$file.sha256"
+          stat --printf='%n %s bytes\n' "$file" > transfer-receipt.txt
+          cat "$file.sha256" >> transfer-receipt.txt
+      - name: Upload verified wheel as ephemeral workflow artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: pagefind-wheel-1.5.2-verified
+          path: |
+            pagefind_bin-1.5.2-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.musllinux_1_1_x86_64.whl
+            pagefind_bin-1.5.2-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.musllinux_1_1_x86_64.whl.sha256
+            transfer-receipt.txt
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
