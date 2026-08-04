@@ -1,0 +1,60 @@
+name: MetaBlooms Grype DB v6.1.9 Retrieval
+
+on:
+  push:
+    branches:
+      - metablooms/grype-db-v6-1-9-retrieval
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve-and-verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Download exact Anchore archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive='vulnerability-db_v6.1.9_2026-07-30T00:34:33Z_1785395199.tar.zst'
+          url='https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-07-30T00:34:33Z_1785395199.tar.zst'
+          expected='01f74465808d907551d96d6cc3fa3c52b659402b24b88fc6010dfbc674eab159'
+          curl --fail --location --retry 5 --retry-all-errors --connect-timeout 30 --max-time 600 --output "$archive" "$url"
+          printf '%s  %s\n' "$expected" "$archive" > "$archive.sha256"
+          sha256sum --check "$archive.sha256"
+          actual="$(sha256sum "$archive" | awk '{print $1}')"
+          size="$(stat -c '%s' "$archive")"
+          python3 - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          archive='vulnerability-db_v6.1.9_2026-07-30T00:34:33Z_1785395199.tar.zst'
+          receipt={
+            'schema':'mb.metablooms.grype_database_provider_retrieval.v1',
+            'decision':'PASS_EXACT_ARCHIVE_HASH_VERIFIED',
+            'created_at_utc':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),
+            'source_url':'https://grype.anchore.io/databases/v6/'+archive,
+            'archive_name':archive,
+            'archive_size_bytes':os.path.getsize(archive),
+            'expected_sha256':'01f74465808d907551d96d6cc3fa3c52b659402b24b88fc6010dfbc674eab159'
+          }
+          with open('METABLOOMS_GRYPE_DB_PROVIDER_RETRIEVAL_RECEIPT.json','w',encoding='utf-8') as f:
+            json.dump(receipt,f,indent=2,sort_keys=True)
+            f.write('\n')
+          PY
+
+      - name: Upload exact verified archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: metablooms-grype-db-v6-1-9-exact
+          path: |
+            vulnerability-db_v6.1.9_2026-07-30T00:34:33Z_1785395199.tar.zst
+            vulnerability-db_v6.1.9_2026-07-30T00:34:33Z_1785395199.tar.zst.sha256
+            METABLOOMS_GRYPE_DB_PROVIDER_RETRIEVAL_RECEIPT.json
+          compression-level: 0
+          retention-days: 3
+          if-no-files-found: error
