@@ -1,0 +1,2 @@
+Pagefind 1.5.2 transfer trigger.
+Expected SHA-256: 92eb3f492fc7dbf0fc68c18c78f8de44ecfb266ba64cb982e3ccc1b4bbd7203e
