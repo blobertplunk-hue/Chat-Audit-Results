@@ -17,30 +17,39 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Download exact Anchore archive
+      - name: Download and verify exact Anchore archive
         shell: bash
         run: |
           set -euo pipefail
-          archive='vulnerability-db_v6.1.9_2026-07-30T00:34:33Z_1785395199.tar.zst'
+          original='vulnerability-db_v6.1.9_2026-07-30T00:34:33Z_1785395199.tar.zst'
+          transport='vulnerability-db_v6.1.9_2026-07-30T00-34-33Z_1785395199.tar.zst'
           url='https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-07-30T00:34:33Z_1785395199.tar.zst'
           expected='01f74465808d907551d96d6cc3fa3c52b659402b24b88fc6010dfbc674eab159'
-          curl --fail --location --retry 5 --retry-all-errors --connect-timeout 30 --max-time 600 --output "$archive" "$url"
-          printf '%s  %s\n' "$expected" "$archive" > "$archive.sha256"
-          sha256sum --check "$archive.sha256"
-          actual="$(sha256sum "$archive" | awk '{print $1}')"
-          size="$(stat -c '%s' "$archive")"
+          curl --fail --location --retry 5 --retry-all-errors --connect-timeout 30 --max-time 600 --output "$original" "$url"
+          printf '%s  %s\n' "$expected" "$original" > original.sha256
+          sha256sum --check original.sha256
+          actual="$(sha256sum "$original" | awk '{print $1}')"
+          size="$(stat -c '%s' "$original")"
+          mv "$original" "$transport"
+          printf '%s  %s\n' "$expected" "$transport" > "$transport.sha256"
           python3 - <<'PY'
-          import json, os
+          import hashlib, json, os
           from datetime import datetime, timezone
-          archive='vulnerability-db_v6.1.9_2026-07-30T00:34:33Z_1785395199.tar.zst'
+          original='vulnerability-db_v6.1.9_2026-07-30T00:34:33Z_1785395199.tar.zst'
+          transport='vulnerability-db_v6.1.9_2026-07-30T00-34-33Z_1785395199.tar.zst'
+          with open(transport,'rb') as f:
+            actual=hashlib.sha256(f.read()).hexdigest()
           receipt={
             'schema':'mb.metablooms.grype_database_provider_retrieval.v1',
             'decision':'PASS_EXACT_ARCHIVE_HASH_VERIFIED',
             'created_at_utc':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),
-            'source_url':'https://grype.anchore.io/databases/v6/'+archive,
-            'archive_name':archive,
-            'archive_size_bytes':os.path.getsize(archive),
-            'expected_sha256':'01f74465808d907551d96d6cc3fa3c52b659402b24b88fc6010dfbc674eab159'
+            'source_url':'https://grype.anchore.io/databases/v6/'+original,
+            'original_archive_name':original,
+            'transport_archive_name':transport,
+            'transport_rename_only':True,
+            'archive_size_bytes':os.path.getsize(transport),
+            'expected_sha256':'01f74465808d907551d96d6cc3fa3c52b659402b24b88fc6010dfbc674eab159',
+            'actual_sha256':actual
           }
           with open('METABLOOMS_GRYPE_DB_PROVIDER_RETRIEVAL_RECEIPT.json','w',encoding='utf-8') as f:
             json.dump(receipt,f,indent=2,sort_keys=True)
@@ -52,8 +61,8 @@ jobs:
         with:
           name: metablooms-grype-db-v6-1-9-exact
           path: |
-            vulnerability-db_v6.1.9_2026-07-30T00:34:33Z_1785395199.tar.zst
-            vulnerability-db_v6.1.9_2026-07-30T00:34:33Z_1785395199.tar.zst.sha256
+            vulnerability-db_v6.1.9_2026-07-30T00-34-33Z_1785395199.tar.zst
+            vulnerability-db_v6.1.9_2026-07-30T00-34-33Z_1785395199.tar.zst.sha256
             METABLOOMS_GRYPE_DB_PROVIDER_RETRIEVAL_RECEIPT.json
           compression-level: 0
           retention-days: 3
