@@ -1,0 +1,57 @@
+name: MetaBlooms Stage005 Grype Transfer
+
+on:
+  pull_request:
+    paths:
+      - '.metablooms/stage005-trigger.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download and verify Grype database archive
+        shell: bash
+        env:
+          SOURCE_URL: https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-07-30T00:34:33Z_1785395199.tar.zst
+          EXPECTED_SIZE: '138793130'
+          EXPECTED_SHA256: 01f74465808d907551d96d6cc3fa3c52b659402b24b88fc6010dfbc674eab159
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 5 --retry-all-errors "$SOURCE_URL" -o vulnerability-db.tar.zst
+          actual_size="$(stat -c%s vulnerability-db.tar.zst)"
+          test "$actual_size" = "$EXPECTED_SIZE"
+          printf '%s  %s\n' "$EXPECTED_SHA256" vulnerability-db.tar.zst | sha256sum --check --strict
+          python3 - <<'PY'
+          import hashlib, json, os
+          path = 'vulnerability-db.tar.zst'
+          h = hashlib.sha256()
+          with open(path, 'rb') as f:
+              for block in iter(lambda: f.read(1024 * 1024), b''):
+                  h.update(block)
+          manifest = {
+              'schema': 'mb.capability_registry.stage005.transport_manifest.v1',
+              'source_url': os.environ['SOURCE_URL'],
+              'size_bytes': os.path.getsize(path),
+              'sha256': h.hexdigest(),
+              'payload_filename': path,
+              'archive_extracted': False,
+              'hydration_performed': False,
+          }
+          with open('stage005-manifest.json', 'w', encoding='utf-8') as out:
+              json.dump(manifest, out, indent=2, sort_keys=True)
+              out.write('\n')
+          PY
+      - name: Upload verified transport artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: metablooms-stage005-grype-verified
+          path: |
+            vulnerability-db.tar.zst
+            stage005-manifest.json
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
