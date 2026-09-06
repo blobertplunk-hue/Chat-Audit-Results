@@ -1,0 +1,29 @@
+{
+  "schema": "metablooms.stage008b.pushgate.public_contract_evidence.v1",
+  "benchmark_id": "CVB-007-20260905",
+  "stage008_pin": {
+    "pin_type": "documentation_snapshot",
+    "retrieved_at": "2026-09-05T20:26:00-05:00",
+    "observed_version": "Early-access hosted product; no public source/product version identified"
+  },
+  "current_public_docs_checked_2026_09_06": [
+    {
+      "url": "https://pushgate.dev/docs",
+      "claim": "A connected repository receives a repository-specific Git remote and setup instructions; the setup screen is the source of commands."
+    },
+    {
+      "url": "https://pushgate.dev/docs/trust/evidence",
+      "claim": "Evidence statements bind immutable subjects; Pushgate policy requires exact commit/artifact identity and rejects evidence unless envelope, certificate chain, timestamp, subject, schema, content identifier, and tenant-scoped lookup agree."
+    },
+    {
+      "url": "https://pushgate.dev/docs/trust/policy",
+      "claim": "A usable signed decision binds tenant, canonical repository route, immutable repository ID, commit, fresh push nonce/scope, exact policy authority/digest, outcome, and bounded evidence descriptors."
+    },
+    {
+      "url": "https://pushgate.dev/docs/trust/push",
+      "claim": "Pushgate evaluates every proposed non-deletion commit and states that evidence for one commit is not replayed as evidence for another."
+    }
+  ],
+  "qualification_boundary": "These public contracts support applicability and expected-behavior mapping only. They are not runtime evidence for CVB-007 scenario PASS/FAIL classifications.",
+  "runtime_requirement": "Provider execution requires a connected tenant repository, repository-specific Pushgate remote, push identity/certificate flow, signed evidence, and policy assignment."
+}
