@@ -7,6 +7,7 @@ CLI="$CASP_SRC/dist/cli.js"
 ROOT="${GITHUB_WORKSPACE:-$(pwd)}"
 OUT="$ROOT/benchmark-output/casp"
 WORK="$ROOT/.benchmark-work/casp"
+HOLDOUT="$ROOT/benchmark/holdouts/casp-stage008b-v1.json"
 
 rm -rf "$OUT" "$WORK"
 mkdir -p "$OUT" "$WORK"
@@ -18,6 +19,15 @@ if [[ "$actual_pin" != "$PIN" ]]; then
   exit 97
 fi
 node "$CLI" --version > "$OUT/version.txt"
+
+if [[ ! -f "$HOLDOUT" ]]; then
+  echo "Missing precommitted holdout fixture: $HOLDOUT" >&2
+  exit 96
+fi
+cp "$HOLDOUT" "$OUT/holdout-fixture.json"
+VARIANT_ID="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["variant_id"])' "$HOLDOUT")"
+PERTURBATION_FAMILY="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["perturbation_family"])' "$HOLDOUT")"
+printf '%s\n' "$VARIANT_ID" > "$OUT/variant-id.txt"
 
 run_check() {
   local scenario="$1"
@@ -52,6 +62,22 @@ write_state() {
 JSON
 }
 
+apply_holdout_change() {
+  local repo="$1"
+  python3 - "$HOLDOUT" "$repo" <<'PY'
+import json, pathlib, sys
+spec = json.load(open(sys.argv[1]))
+repo = pathlib.Path(sys.argv[2])
+rel = pathlib.PurePosixPath(spec['change']['path'])
+if rel.is_absolute() or '..' in rel.parts:
+    raise SystemExit('unsafe holdout path')
+target = repo.joinpath(*rel.parts)
+target.parent.mkdir(parents=True, exist_ok=True)
+target.write_text(spec['change']['content'])
+print(rel.as_posix())
+PY
+}
+
 # S0 — clean current state. CASP state points to the base commit; the only
 # commit after it is the state-bump commit, which CASP explicitly accepts.
 REPO="$WORK/repo"
@@ -71,11 +97,12 @@ printf '%s\n' "$BASE" > "$OUT/s0.recorded_base.txt"
 printf '%s\n' "$STATE_BUMP" > "$OUT/s0.head.txt"
 run_check S0 "$REPO"
 
-# S1 — a legitimate code commit changes the trusted repository revision while
-# the recorded CASP state remains unchanged.
-printf 'changed-after-recorded-state\n' >> "$REPO/app.txt"
-git -C "$REPO" add app.txt
-git -C "$REPO" commit -q -m "out-of-band repository change"
+# S1 — apply the precommitted V1 repository-change holdout while leaving the
+# previously valid CASP state unchanged.
+CHANGED_PATH="$(apply_holdout_change "$REPO")"
+printf '%s\n' "$CHANGED_PATH" > "$OUT/s1.changed_path.txt"
+git -C "$REPO" add -- "$CHANGED_PATH"
+git -C "$REPO" commit -q -m "apply precommitted holdout repository change"
 CHANGED_HEAD="$(git -C "$REPO" rev-parse HEAD)"
 printf '%s\n' "$CHANGED_HEAD" > "$OUT/s1.changed_head.txt"
 run_check S1 "$REPO"
@@ -97,17 +124,21 @@ printf '%s\n' "$CURRENT_CODE" > "$OUT/s6.recorded_base.txt"
 printf '%s\n' "$FRESH_STATE_HEAD" > "$OUT/s6.head.txt"
 run_check S6 "$REPO"
 
-python3 - "$OUT" <<'PY'
+python3 - "$OUT" "$VARIANT_ID" "$PERTURBATION_FAMILY" <<'PY'
 import json, pathlib, sys
 out = pathlib.Path(sys.argv[1])
+variant_id, family = sys.argv[2], sys.argv[3]
 summary = {
     "schema": "metablooms-stage008b-casp-raw/v1",
+    "run_mode": "SCORED_HOLDOUT",
     "competitor": "CASP",
     "repository": "ThalesGnimavo/casp",
     "pin": "592a253cc16f346edf8537f4c40e4a90dceadc91",
+    "variant_id": variant_id,
+    "perturbation_family": family,
     "executed_scenarios": {},
     "not_executed": {
-        "S2": "predeclared REQUIRES_PROBE; no native task-authorization/revocation primitive established",
+        "S2": "predeclared REQUIRES_PROBE; no native task-authorization/revocation primitive established in the pinned probe",
         "S4": "predeclared NOT_APPLICABLE; CASP does not perform independent candidate qualification",
         "S5": "predeclared LIKELY_APPLICABLE; no native durable promotion-decision authority primitive established in the pinned probe"
     }
