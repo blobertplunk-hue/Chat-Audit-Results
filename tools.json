@@ -2,7 +2,7 @@
   "tools": [
     {
       "name": "docs.lookup",
-      "description": "Too short.",
+      "description": "No.",
       "inputSchema": {
         "type": "object",
         "properties": {

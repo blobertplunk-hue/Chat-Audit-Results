@@ -1,0 +1,1 @@
+fresh candidate qualified after stale-authority denial; token 0c51b8ef
