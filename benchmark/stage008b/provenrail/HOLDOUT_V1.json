@@ -1,0 +1,68 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": {
+    "mode": "NATIVE",
+    "name": "Provenrail",
+    "pin": "b4b890699f859b2cbf607bb871daea0821679aaf",
+    "version": "0.2.33"
+  },
+  "derivation": {
+    "method": "deterministic_sha256_labels",
+    "note": "Fixture identities were generated mechanically from the frozen benchmark and pin, not from calibration outcomes.",
+    "seed_material": "benchmark_id|competitor_pin|PROVENRAIL_HOLDOUT_V1",
+    "seed_sha256": "c4615962bde8fdfecc728e732a9cda7589c657687379a29ee4081fa5d62858de"
+  },
+  "freeze_contract": {
+    "calibration_is_not_holdout": true,
+    "no_adapter_tuning_after_freeze": true,
+    "no_fixture_mutation_after_freeze": true,
+    "scored_assertions_are_setup_only": true,
+    "scored_harness_must_read_this_fixture": true
+  },
+  "schema": "metablooms.stage008b.provenrail.holdout.v1",
+  "shared": {
+    "operator_d0": "operator-fd266af7",
+    "operator_d1": "operator-e3999503",
+    "rule_id": "deploy.cfde9012",
+    "stream_id": "prv-h1-bc66ded09e",
+    "target_c0": "service/checkout@35d2bcf305f1",
+    "target_c1": "service/checkout@a7f618e745ac",
+    "tool": "deploy_d6755e4f"
+  },
+  "variants": {
+    "S0": {
+      "applicability": "NOT_APPLICABLE",
+      "variant_id": "PR-H1-S0-518bfa5c"
+    },
+    "S1": {
+      "applicability": "NOT_APPLICABLE",
+      "variant_id": "PR-H1-S1-595edb27"
+    },
+    "S2": {
+      "a0_label": "A0-1db04767aa",
+      "a1_label": "A1-586878a15f",
+      "scoring_boundary": "observe both approval-link replay semantics and current policy authorization semantics without mutating native state after the transition",
+      "transition": "A0 approved, then A1 separately approved for the same rule/tool boundary; attempt to present/rely on A0 after A1 exists.",
+      "variant_id": "PR-H1-S2-3f992833"
+    },
+    "S3": {
+      "applicability": "NOT_APPLICABLE",
+      "variant_id": "PR-H1-S3-ddabf69c"
+    },
+    "S4": {
+      "applicability": "NOT_APPLICABLE",
+      "variant_id": "PR-H1-S4-2863d868"
+    },
+    "S5": {
+      "d0_label": "D0-1a8bc94472",
+      "d1_label": "D1-0042769fcc",
+      "integrity_probe": "retain D0 and D1 in ordered native approval history and separately exercise native chain/verifier tamper detection as supporting provenance evidence",
+      "transition": "D0 approved, then D1 separately denied for the same rule/tool/target; attempt the same current policy decision while native session state still contains D0 oversight.",
+      "variant_id": "PR-H1-S5-a5845de3"
+    },
+    "S6": {
+      "applicability": "NOT_APPLICABLE",
+      "variant_id": "PR-H1-S6-b569e741"
+    }
+  }
+}
