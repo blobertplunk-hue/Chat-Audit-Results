@@ -58,3 +58,8 @@ Status: living notes; findings are implementation candidates, not yet changes to
 - Observation: pinned Provenrail calibration showed D0 approval remains `approved` and native `SessionState.oversight_rules` continues to allow the rule after a later same-scope D1 denial exists in the approval store.
 - Risk: an audit trail can accurately retain a newer denial while the execution-side authorization cache remains permissive.
 - Improvement: MetaBlooms authority objects should carry explicit generation/epoch or supersession IDs into the enforcement cache, and a later denial/revocation must invalidate any prior cached authorization before current execution.
+
+## MB-CV-012 — Refresh the active tracker after durable stage transitions
+- Observation: the turn-level `ACTIVE_TRACKER_PREVIEW.txt` still names the original AgentAction task even after provider reconciliation showed AgentAction complete and the same governed turn closed Provenrail Stage008B.
+- Risk: the operator-facing tracker can become semantically stale inside a long turn even while receipts, GitHub evidence, and continuation state are correct.
+- Improvement: every terminal stage receipt or authoritative `LATEST` pointer publication should trigger tracker regeneration from durable state, with a `tracker_as_of_stage` / source receipt hash so stale UI state is detectable.
