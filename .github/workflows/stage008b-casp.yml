@@ -1,0 +1,56 @@
+name: stage008b-casp
+
+on:
+  push:
+    branches:
+      - benchmark/stage008b-casp-20260905
+    paths:
+      - '.github/workflows/stage008b-casp.yml'
+      - 'benchmark/stage008b/**'
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout harness
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Fetch exact CASP pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone -q https://github.com/ThalesGnimavo/casp.git /tmp/casp-src
+          git -C /tmp/casp-src checkout -q 592a253cc16f346edf8537f4c40e4a90dceadc91
+          test "$(git -C /tmp/casp-src rev-parse HEAD)" = "592a253cc16f346edf8537f4c40e4a90dceadc91"
+
+      - name: Build pinned CASP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/casp-src
+          npm ci
+          npm run build
+
+      - name: Execute frozen benchmark slice
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash benchmark/stage008b/run-casp.sh /tmp/casp-src
+
+      - name: Upload raw benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage008b-casp-results
+          path: benchmark-output/casp
+          if-no-files-found: warn
+          retention-days: 30
