@@ -1,0 +1,50 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "derivation": {
+    "method": "sha256_seeded_labels",
+    "seed_material": "CVB-007-20260905|30ca88ab3f9d49a6a06c5913efced3dd168e620e3d02f437eee6f85433d570e0|8b91e56c3ae87839f59957efb094a44de66a5cf796ab3aa0d0b3df51e7bf09c9|2026-09-06T21:35:00Z|METABLOOMS_STAGE009_HOLDOUT_V1",
+    "seed_sha256": "6b41ae3f3bea95c77b8da9a4a6f8ab1aab4187d8bc745abaa2189b8263996ad1"
+  },
+  "freeze_contract": {
+    "calibration_is_not_holdout": true,
+    "no_adapter_tuning_after_freeze": true,
+    "no_fixture_mutation_after_freeze": true,
+    "scored_harness_contains_no_expected_classifications": true,
+    "scored_harness_reads_this_fixture": true
+  },
+  "mode": "COMPOSITE",
+  "schema": "metablooms.stage009.holdout.v1",
+  "shared": {
+    "A0_session": "A0-1f3bf75f7a",
+    "A1_session": "A1-5b370e5f80",
+    "C0_text": "C0:af49457a056248a95c338299\n",
+    "C1_text": "C1:f806de0035dec22e2e305489\n",
+    "G0_epoch": "G0-63c1f602bc",
+    "G1_epoch": "G1-5565699150",
+    "R0_text": "R0:271d20430d34ec5ffc8a6ef1\n",
+    "R1_text": "R1:d7de3bf771cbd80cc51a8248\n",
+    "delivery0_text": "DELIVERY0:e1dfe35341be374c8aa8b593\n",
+    "delivery1_text": "DELIVERY1:1f63c2324cd32c9d8c34a1a0\n",
+    "scope": "stage009/f6fd14ee200632f9"
+  },
+  "system": "MetaBlooms",
+  "system_snapshot": {
+    "canonical_baseline_archive_sha256": "30ca88ab3f9d49a6a06c5913efced3dd168e620e3d02f437eee6f85433d570e0",
+    "component_sha256": {
+      "tools/metablooms/candidate_qualification_binding_gate_v1.py": "3b212fbafdd19cac1859e0c046c443017e5deb575d74f6d5dd105beb989acb08",
+      "tools/metablooms/cccc_session_event_registry_v1.py": "4542771508c3d25d5dd827f1e6d5aa5cc6a99bc47dcb5765fba7e1fb95db6205",
+      "tools/metablooms/deny_default_capability_broker_v1.py": "8c2a86dd026fae08f073a88023eb678ec68958f5ad56d57522ce8a11811ade6f",
+      "tools/metablooms/github_authority_cas_publisher_v1.py": "8790ffdebf101818bd17889272a577d411b14774460a286428f376a3082080cd",
+      "tools/metablooms/transactional_host_adapter_v1.py": "8b91e56c3ae87839f59957efb094a44de66a5cf796ab3aa0d0b3df51e7bf09c9"
+    }
+  },
+  "variants": {
+    "S0": {"variant_id": "MB-H1-S0-820ab75a4d"},
+    "S1": {"variant_id": "MB-H1-S1-028e2055ad"},
+    "S2": {"variant_id": "MB-H1-S2-b737ff86f7"},
+    "S3": {"variant_id": "MB-H1-S3-07523e12b3"},
+    "S4": {"variant_id": "MB-H1-S4-95a5d11993"},
+    "S5": {"variant_id": "MB-H1-S5-1149704e23"},
+    "S6": {"variant_id": "MB-H1-S6-922ba9cd4f"}
+  }
+}
