@@ -1,0 +1,83 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "benchmark_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+  "competitor": {
+    "mode": "NATIVE",
+    "name": "AgentAction",
+    "pin": "4dd2fdf73b894f8326cc76a3fd13b705695d140e",
+    "reported_version": "agentaction-dev 0.13.1"
+  },
+  "evidence_limits": [
+    "External provider execution was mocked at HTTP boundary; the native AgentAction policy/authorization/dispatch path itself executed.",
+    "S2 expiry was induced deterministically by editing the in-memory test grant record, consistent with time-expiry perturbation but not by waiting for wall-clock TTL."
+  ],
+  "holdout": {
+    "commit": "ecc55622eeaf9bd77a5d4505dfedbf2b15fb6185",
+    "frozen_before_scored_harness": true,
+    "sha256": "71e7754ef08e92132e52c4386fc73a1d69d157aa2cb2f2d13d7a1d51e8613161"
+  },
+  "integrated_verdict": "FAIL_INTEGRATED",
+  "integrated_verdict_reason": "AgentAction passes S0, S2, S4, and S6; S3 is frozen NOT_APPLICABLE. S1 and S5 are applicable FAILs: stale G0 authority remained executable after G1 became current, and D0 remained executable after a later same-scope D1 denial. CVB-007 therefore requires FAIL_INTEGRATED.",
+  "meta_boundaries": {
+    "metablooms_stage009_self_run_performed": false,
+    "stage010_differentiation_adjudication_performed": false,
+    "superiority_claim_authorized": false
+  },
+  "next_competitor": "Provenrail",
+  "provenance": {
+    "chat_url": "https://chatgpt.com/g/g-p-689c74a1b2c881919eef34000e072573-metabrain/c/6a9db5b7-18f0-83e9-ba2c-4c194f4f4471"
+  },
+  "remaining_frozen_cohort": [
+    "Provenrail",
+    "Evidence Gate",
+    "Pushgate"
+  ],
+  "result_schema_sha256": "68101fa8cde944768831e687104c25afd871aab87df547d43baa31eda32d4254",
+  "scenario_results": {
+    "S0": {
+      "classification": "PASS",
+      "decision_reason": "Current G0 authority for C0 produced an approved JIT grant and a provider dispatch for the exact frozen C0 commit; the audit trail retained creation, decision, grant, execution decision, and provider execution.",
+      "observed_decision": "PROMOTE"
+    },
+    "S1": {
+      "classification": "FAIL",
+      "decision_reason": "After the governing manifest changed from frozen G0 to G1, AgentAction accepted the still-G0-bound grant and dispatched C0 with HTTP 201 and one provider call. This directly contradicts the required stale-proof denial.",
+      "observed_decision": "PROMOTE"
+    },
+    "S2": {
+      "classification": "PASS",
+      "decision_reason": "The expired A0 JIT authorization was rejected with HTTP 403, explicit findings that the JIT grant was expired/invalid, and zero provider calls. A1 remained separately identifiable in retained audit history.",
+      "observed_decision": "DENY_PROMOTION"
+    },
+    "S3": {
+      "classification": "NOT_APPLICABLE",
+      "decision_reason": "Frozen Stage008 applicability and HOLDOUT_V1 mark AgentAction S3 NOT_APPLICABLE because this tested native boundary does not claim cross-session interrupted Git-workstream reconstruction.",
+      "observed_decision": "NO_DECISION"
+    },
+    "S4": {
+      "classification": "PASS",
+      "decision_reason": "C0-bound authorization presented for frozen C1 was rejected with HTTP 403 for commit_sha/request_digest mismatch and zero provider calls; the original C0 approval evidence retained its C0 binding.",
+      "observed_decision": "DENY_PROMOTION"
+    },
+    "S5": {
+      "classification": "FAIL",
+      "decision_reason": "After a later same-scope D1 denial, the earlier D0 allow still minted a JIT grant and dispatched the provider path with HTTP 201 and one provider call. Historical records were retained, but D0 was not prevented from authorizing current promotion.",
+      "observed_decision": "PROMOTE"
+    },
+    "S6": {
+      "classification": "PASS",
+      "decision_reason": "A stale C1 attempt under C0 authority was denied for commit mismatch; a distinct fresh C1 approval and JIT grant then dispatched the exact frozen C1 commit, while separate C0 and C1 audit chains remained inspectable.",
+      "observed_decision": "PROMOTE"
+    }
+  },
+  "scored_run": {
+    "artifact_id": 9995760323,
+    "artifact_internal_manifest_validation": "PASS_ZERO_MISMATCH",
+    "artifact_sha256": "e34625b293f141bcbd4231276609a8fd6dc4abe5804190ecbedd3067b5ef8ad8",
+    "github_workflow_url": "https://github.com/blobertplunk-hue/Chat-Audit-Results/actions/runs/34055275809",
+    "workflow_conclusion": "success",
+    "workflow_head_sha": "2b2b1050ca3c376199eaa0484f329f5b9b379a22",
+    "workflow_run_id": 34055275809
+  },
+  "stage": "STAGE008B_AGENTACTION_SCORED_HOLDOUT_V1_ADJUDICATION"
+}
