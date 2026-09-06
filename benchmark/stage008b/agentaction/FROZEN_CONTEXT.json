@@ -1,0 +1,29 @@
+{
+  "schema": "metablooms.stage008b.agentaction.frozen_context.v1",
+  "benchmark_id": "CVB-007-20260905",
+  "benchmark_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+  "benchmark_markdown_sha256": "c741199270699f6696ab075fa5389b8bd6938d726a14bc43c9c892a6f5f2751e",
+  "result_schema_sha256": "68101fa8cde944768831e687104c25afd871aab87df547d43baa31eda32d4254",
+  "competitor": {
+    "name": "AgentAction",
+    "repository": "dinpd/AgentAction",
+    "pin": "4dd2fdf73b894f8326cc76a3fd13b705695d140e",
+    "reported_version": "agentaction-dev 0.13.1",
+    "mode": "FULL_LOCAL"
+  },
+  "scenario_applicability": {
+    "S0": "LIKELY_APPLICABLE",
+    "S1": "LIKELY_APPLICABLE",
+    "S2": "APPLICABLE",
+    "S3": "NOT_APPLICABLE",
+    "S4": "LIKELY_APPLICABLE",
+    "S5": "REQUIRES_PROBE",
+    "S6": "LIKELY_APPLICABLE"
+  },
+  "boundaries": [
+    "Do not modify CVB-007 semantics.",
+    "Preserve NOT_APPLICABLE and NOT_VERIFIED rather than forcing a score.",
+    "Do not run MetaBlooms Stage009 yet.",
+    "Do not make superiority or uniqueness claims before Stage010."
+  ]
+}
