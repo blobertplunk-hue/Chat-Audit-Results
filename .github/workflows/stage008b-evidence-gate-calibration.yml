@@ -1,0 +1,120 @@
+name: Stage008B Evidence Gate calibration
+
+on:
+  push:
+    branches:
+      - benchmark/stage008b-evidence-gate-20260906
+    paths:
+      - '.github/workflows/stage008b-evidence-gate-calibration.yml'
+      - 'benchmark/stage008b/evidence-gate/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout evidence branch
+        uses: actions/checkout@v4
+
+      - name: Checkout exact Evidence Gate pin
+        uses: actions/checkout@v4
+        with:
+          repository: evidence-gate/evidence-gate-action
+          ref: 3f478e1f3d3c5050725f15ecf9cdb4ff5eb9ea75
+          path: evidence-gate-action
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify pin and context
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p raw/evidence-gate-calibration
+          test "$(git -C evidence-gate-action rev-parse HEAD)" = "3f478e1f3d3c5050725f15ecf9cdb4ff5eb9ea75"
+          python - <<'PY' > raw/evidence-gate-calibration/context_check.json
+          import json, pathlib
+          d=json.loads(pathlib.Path('benchmark/stage008b/evidence-gate/FROZEN_CONTEXT.json').read_text())
+          assert d['benchmark_id']=='CVB-007-20260905'
+          assert d['competitor']['pin']=='3f478e1f3d3c5050725f15ecf9cdb4ff5eb9ea75'
+          print(json.dumps({'status':'PASS','context':d},indent=2))
+          PY
+          git -C evidence-gate-action show -s --format='%H%n%cI%n%s' HEAD > raw/evidence-gate-calibration/pin_metadata.txt
+          cp evidence-gate-action/src/local_evaluator.py raw/evidence-gate-calibration/pinned_local_evaluator.py
+          cp evidence-gate-action/action.yml raw/evidence-gate-calibration/pinned_action.yml
+          cp evidence-gate-action/pyproject.toml raw/evidence-gate-calibration/pinned_pyproject.toml
+
+      - name: Install native test dependencies
+        run: python -m pip install pytest pyyaml
+
+      - name: Run pinned native tests
+        shell: bash
+        run: |
+          set -o pipefail
+          (cd evidence-gate-action && pytest -q) 2>&1 | tee raw/evidence-gate-calibration/native_tests.log
+          echo ${PIPESTATUS[0]} > raw/evidence-gate-calibration/native_tests.rc
+          test "$(cat raw/evidence-gate-calibration/native_tests.rc)" = "0"
+
+      - name: Run semantic calibration probes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > raw/evidence-gate-calibration/probe.py <<'PY'
+          import json, pathlib, sys
+          sys.path.insert(0, str(pathlib.Path('evidence-gate-action/src').resolve()))
+          from local_evaluator import evaluate_local
+
+          root=pathlib.Path('raw/evidence-gate-calibration/probe-fixtures')
+          root.mkdir(parents=True,exist_ok=True)
+          c0='11'*32
+          c1='22'*32
+          stmt={
+            '_type':'https://in-toto.io/Statement/v1',
+            'subject':[{'name':'candidate','digest':{'sha256':c0}}],
+            'predicateType':'https://slsa.dev/provenance/v1',
+            'predicate':{'buildDefinition':{'buildType':'metablooms/calibration'},'runDetails':{'builder':{'id':'metablooms'}}}
+          }
+          p=root/'c0-provenance.json'; p.write_text(json.dumps(stmt))
+          s0=evaluate_local('provenance','S0',[str(p)])
+          # Baseline generation changes externally; local evaluator receives the same evidence file only.
+          s1_old_under_new_baseline=evaluate_local('provenance','S1',[str(p)])
+          # Wrong-candidate probe: caller expects C1, while statement remains bound to C0.
+          s4_c0_presented_for_c1=evaluate_local('provenance','S4',[str(p)])
+          # Later failed decision followed by re-evaluation of the old passing evidence.
+          missing=root/'missing.json'
+          d1=evaluate_local('provenance','S5',[str(missing)])
+          d0_replayed=evaluate_local('provenance','S5',[str(p)])
+          c1_stmt=json.loads(json.dumps(stmt)); c1_stmt['subject'][0]['digest']['sha256']=c1
+          p1=root/'c1-provenance.json'; p1.write_text(json.dumps(c1_stmt))
+          s6=evaluate_local('provenance','S6',[str(p1)])
+          print(json.dumps({
+            'calibration_only':True,
+            'S0_valid_current':s0,
+            'S1_old_evidence_after_external_baseline_change':s1_old_under_new_baseline,
+            'S4_c0_evidence_presented_for_expected_c1':s4_c0_presented_for_c1,
+            'S5_later_failed_evaluation':d1,
+            'S5_old_pass_re_evaluated_after_later_fail':d0_replayed,
+            'S6_fresh_c1_evidence':s6,
+            'boundary':'The free local evaluator validates evidence structure/content but receives no expected Git candidate or baseline-generation parameter in this probe.'
+          },indent=2,sort_keys=True))
+          PY
+          python raw/evidence-gate-calibration/probe.py | tee raw/evidence-gate-calibration/probe_observations.json
+
+      - name: Build and verify manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp benchmark/stage008b/evidence-gate/FROZEN_CONTEXT.json raw/evidence-gate-calibration/FROZEN_CONTEXT.json
+          (cd raw/evidence-gate-calibration && find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+
+      - name: Upload calibration artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage008b-evidence-gate-calibration
+          path: raw/evidence-gate-calibration
+          if-no-files-found: error
