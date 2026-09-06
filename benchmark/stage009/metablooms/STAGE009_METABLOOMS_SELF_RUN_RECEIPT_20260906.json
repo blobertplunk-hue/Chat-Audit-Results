@@ -1,0 +1,28 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "calibration": {"bytecode_disabled_on_clean_rerun": true, "native_tests": "31 passed", "native_tests_rc": 0},
+  "execution_mode": "COMPOSITE",
+  "formal_result": {
+    "json_path": "benchmark/stage009/metablooms/METABLOOMS_STAGE009_SELF_RUN_RESULT_20260906.json",
+    "json_sha256": "eb64d565aa338bd343514effd46fc07d4b7f9af9479d4d3c4b0a6c1e5cc7c06d",
+    "md_path": "benchmark/stage009/metablooms/METABLOOMS_STAGE009_SELF_RUN_RESULT_20260906.md",
+    "md_sha256": "5c68b8ec2a3bf2dbc33a9e56c572796a40f9fa237c4e564d59a50ed959c27264"
+  },
+  "harness": {"sha256": "e18d3787ad2f6b2efaf7f9970f033177d4f928a5f621bd605ee71dc29947bbf7"},
+  "holdout": {"remote_freeze_commit": "eee5a0cc69cf54883965aed72234f9afd4c6b6ff", "sha256": "c1515a58364f3d1d46b93fd778486a623f2df14d35027b975abd09355401f624"},
+  "improvement_notes": {"count": 23, "sha256": "61a5fa6217b182a578130afec75de92bab6577480b0dc3823ac6e36500658a43"},
+  "integrated_verdict": "PASS_INTEGRATED",
+  "interrupted_attempts": [
+    {"attempt": 1, "receipt_sha256": "b43ab3036f374f273c1ea6ba7bb941bf5cb1df0c94f6045e38bb682a59501261"},
+    {"attempt": 2, "receipt_sha256": "783714cfd1ce8f6954b85817f09b6d4190a487702559cc0fda571b2711bb0c11"}
+  ],
+  "next_action": "Run Stage010 comparative differentiation adjudication against the frozen Stage008 competitor results and this Stage009 COMPOSITE result; preserve COMPOSITE versus NATIVE distinction.",
+  "qualification": {"native_single_entrypoint_demonstrated": false, "provider_faithful_live_cas_mutation_demonstrated": false, "stage010_performed": false, "superiority_or_uniqueness_claim_authorized": false},
+  "raw_observations": {"sha256": "12c731698dab76f5bb31be2aa04544671cb45329fa0c7febe2b18d23bdaa4de3"},
+  "scenario_matrix": {"S0":"PASS","S1":"PASS","S2":"PASS","S3":"PASS","S4":"PASS","S5":"PASS","S6":"PASS"},
+  "schema": "metablooms.commercial_validation.stage009.receipt.v1",
+  "scored_manifest": {"sha256": "52e1e6abe891453f43fb02441905d0a3522de729750ea1ca0b1ade938de0a60e", "verification": "PASS_ZERO_MISMATCH"},
+  "stage": "STAGE009_METABLOOMS_SELF_RUN_COMPLETE",
+  "status": "COMPLETE",
+  "system": "MetaBlooms"
+}
