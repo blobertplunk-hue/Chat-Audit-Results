@@ -1,0 +1,57 @@
+name: stage008b-agents-shipgate
+
+on:
+  push:
+    branches:
+      - benchmark/stage008b-agents-shipgate-20260905
+
+permissions:
+  contents: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout harness
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Fetch exact Agents Shipgate pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone -q https://github.com/ThreeMoonsLab/agents-shipgate.git /tmp/agents-shipgate-src
+          git -C /tmp/agents-shipgate-src checkout -q c41571f2d11eb5864b487f0ace40a84dfa8f385b
+          test "$(git -C /tmp/agents-shipgate-src rev-parse HEAD)" = "c41571f2d11eb5864b487f0ace40a84dfa8f385b"
+
+      - name: Install pinned Agents Shipgate outside authorized workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv /tmp/agents-shipgate-venv
+          /tmp/agents-shipgate-venv/bin/python -m pip install --disable-pip-version-check -q --upgrade pip
+          /tmp/agents-shipgate-venv/bin/python -m pip install --disable-pip-version-check -q /tmp/agents-shipgate-src
+          /tmp/agents-shipgate-venv/bin/agents-shipgate --version
+
+      - name: Execute frozen scored benchmark slice
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash benchmark/stage008b/agents-shipgate/run.sh /tmp/agents-shipgate-src /tmp/agents-shipgate-venv
+
+      - name: Upload raw benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage008b-agents-shipgate-results
+          path: benchmark-output/agents-shipgate
+          if-no-files-found: warn
+          retention-days: 30
