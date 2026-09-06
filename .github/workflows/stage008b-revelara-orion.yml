@@ -34,7 +34,9 @@ jobs:
           test "$(git -C /tmp/orion-src rev-parse HEAD)" = "9b9e9567305122d439727989b3633abc05183bce"
           mkdir -p /tmp/orion-src/cmd/stage008bprobe
           cp benchmark/stage008b/revelara-orion/probe_main.go /tmp/orion-src/cmd/stage008bprobe/main.go
+          cp benchmark/stage008b/revelara-orion/probe_main_test.go /tmp/orion-src/cmd/stage008bprobe/main_test.go
           cd /tmp/orion-src
+          go test ./cmd/stage008bprobe
           go build -o /tmp/orion ./cmd/orion
           go build -o /tmp/orion-probe ./cmd/stage008bprobe
           /tmp/orion --version
