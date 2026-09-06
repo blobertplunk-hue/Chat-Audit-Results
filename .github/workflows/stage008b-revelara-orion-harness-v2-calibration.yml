@@ -1,0 +1,92 @@
+name: stage008b-revelara-orion-harness-v2-calibration
+
+on:
+  push:
+    branches:
+      - benchmark/stage008b-revelara-orion-harness-v2-20260906
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  calibration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout harness v2
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Unit-test scenario isolation architecture
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd benchmark/stage008b/revelara-orion-v2
+          python3 -m unittest -v test_runner_v2.py
+
+      - name: Set up Go 1.26.5
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+          cache: false
+
+      - name: Build exact Orion pin and minimal native adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone -q https://github.com/revelara-ai/orion.git /tmp/orion-src
+          git -C /tmp/orion-src checkout -q 9b9e9567305122d439727989b3633abc05183bce
+          test "$(git -C /tmp/orion-src rev-parse HEAD)" = "9b9e9567305122d439727989b3633abc05183bce"
+          mkdir -p /tmp/orion-src/cmd/stage008bprobev2
+          cp benchmark/stage008b/revelara-orion-v2/probe_main.go /tmp/orion-src/cmd/stage008bprobev2/main.go
+          cd /tmp/orion-src
+          go build -o /tmp/orion ./cmd/orion
+          go build -o /tmp/orion-probe-v2 ./cmd/stage008bprobev2
+          /tmp/orion --version
+
+      - name: Execute all seven scenarios in calibration-only mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd benchmark/stage008b/revelara-orion-v2
+          python3 runner_v2.py \
+            --orion /tmp/orion \
+            --probe /tmp/orion-probe-v2 \
+            --fixture calibration_fixture.json \
+            --out "$GITHUB_WORKSPACE/benchmark-output/revelara-orion-v2" \
+            --mode CALIBRATION_ARCHITECTURE
+
+      - name: Validate seven envelopes and no scoring
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('benchmark-output/revelara-orion-v2')
+          summary=json.load(open(root/'summary.json'))
+          assert summary['scenario_count'] == 7, summary
+          assert summary['all_scenarios_emitted'] is True, summary
+          assert summary['score_performed'] is False, summary
+          assert summary['mode'] == 'CALIBRATION_ARCHITECTURE', summary
+          assert summary['harness_error_count'] == 0, summary
+          for i in range(7):
+              env=json.load(open(root/f'S{i}'/'scenario-envelope.json'))
+              assert env['scenario_id'] == f'S{i}', env
+              assert env['benchmark_score'] is None, env
+              assert env['harness_status'] == 'COMPLETE', env
+          print(json.dumps(summary, indent=2))
+          PY
+
+      - name: Upload raw calibration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage008b-revelara-orion-harness-v2-calibration
+          path: benchmark-output/revelara-orion-v2
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
