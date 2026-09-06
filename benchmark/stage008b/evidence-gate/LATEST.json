@@ -1,0 +1,21 @@
+{
+  "schema": "metablooms.commercial_validation.stage_latest.v1",
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": "Evidence Gate",
+  "terminal_stage": "STAGE008B_EVIDENCE_GATE_FORMAL_ADJUDICATION_COMPLETE",
+  "status": "COMPLETE",
+  "integrated_verdict": "FAIL_INTEGRATED",
+  "result": {
+    "json_path": "benchmark/stage008b/evidence-gate/METABLOOMS_STAGE008B_EVIDENCE_GATE_RESULT_20260906.json",
+    "json_sha256": "82f7a1225a58e5a6ed0b78831eb042436c27a2086bcb136a70be2f470d649cd0",
+    "md_path": "benchmark/stage008b/evidence-gate/METABLOOMS_STAGE008B_EVIDENCE_GATE_RESULT_20260906.md",
+    "md_sha256": "943842ac6119887fdff8c60da140d38114e0e3233d5fc448c30a5254f27f4cfd"
+  },
+  "receipt_path": "benchmark/stage008b/evidence-gate/STAGE008B_EVIDENCE_GATE_RECEIPT_20260906.json",
+  "handoff_path": "benchmark/stage008b/evidence-gate/STAGE008B_EVIDENCE_GATE_HANDOFF_20260906.md",
+  "holdout_commit": "24a98e9b603de9fa17706d7ff4f497f802d2c374",
+  "scored_run_id": 34060609494,
+  "scored_artifact_id": 9997336550,
+  "scored_artifact_sha256": "9771fd7741386de85479ca07fca5461c0107a823f3a13865080ba6178854aeae",
+  "next_action": "Execute Pushgate Stage008B under frozen Stage008 documentation/interface authority. Do not run MetaBlooms Stage009 or Stage010 yet."
+}
