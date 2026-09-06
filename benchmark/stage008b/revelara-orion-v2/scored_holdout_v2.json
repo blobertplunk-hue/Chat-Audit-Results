@@ -1,0 +1,35 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": "Revelara Orion",
+  "competitor_pin": "9b9e9567305122d439727989b3633abc05183bce",
+  "constraints": [
+    "This holdout is frozen before any scored-run workflow or scored runner is committed.",
+    "All seven CVB-007 scenarios must execute independently.",
+    "Harness failures and competitor outcomes are distinct.",
+    "No benchmark score may be emitted by the execution harness.",
+    "S4 must mutate bytes that participate in Orion's candidate content hash.",
+    "V1 and calibration fixtures are retired from scoring."
+  ],
+  "fixture_id": "ORION_SCORED_HOLDOUT_V2_20260906",
+  "fixture_mode": "SCORED_HOLDOUT",
+  "frozen_authority": {
+    "harness_v2_calibration_artifact_sha256": "ca711c685d47624044d3fce2bacb5661397951e43518475eaeec27a9089fd47c",
+    "harness_v2_calibration_run_id": 34034332336,
+    "original_orion_adapter_sha256": "3a4d55999c6a0f549f96c585d7174cea0337c079cfed5c996148bff5eb366a57",
+    "stage007_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+    "stage007_markdown_sha256": "c741199270699f6696ab075fa5389b8bd6938d726a14bc43c9c892a6f5f2751e"
+  },
+  "schema": "metablooms.stage008b.orion_scored_holdout.v2",
+  "tokens": {
+    "a0": "ORION_SCORE_A0_890bc88df624",
+    "a1": "ORION_SCORE_A1_36acf4aa0805",
+    "c0": "ORION_SCORE_C0_345225931695",
+    "c1": "ORION_SCORE_C1_d120922081bb",
+    "d0": "ORION_SCORE_D0_d5c685411bab",
+    "d1": "ORION_SCORE_D1_85e3c1794250",
+    "q0": "ORION_SCORE_Q0_5c8eba131c07",
+    "q1": "ORION_SCORE_Q1_e35d4cf45b77",
+    "r0": "ORION_SCORE_R0_11c929f9e1a1",
+    "r1": "ORION_SCORE_R1_bd8c822c7f93"
+  }
+}
