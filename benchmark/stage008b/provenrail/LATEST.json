@@ -18,7 +18,8 @@
   "scored_artifact_id": 9996912336,
   "scored_artifact_sha256": "fb0e9cffe13ace25088dae30646881254b7454aa69cf8b65a7668aab1de327ec",
   "improvement_notes_path": "benchmark/meta-improvements/METABLOOMS_IMPROVEMENT_NOTES_COMMERCIAL_VALIDATION_20260906.md",
-  "improvement_notes_sha256": "f6ad64b31a59633e9a452073e84053e250b4c2857a2f2cf81f033d7ddbfdbe58",
-  "branch_parent_before_pointer": "3caa2159718caf2f268846f20fa2ebe80aa3d267",
+  "improvement_notes_sha256": "6288c59a5d3a94981e8a0471c16fae584f4521e850dc0060392e8eb30e05958c",
+  "branch_parent_before_pointer": "3ea0abb0361357b50157f1acde4a682276e0b2fa",
+  "tracker_note": "Turn-level ACTIVE_TRACKER_PREVIEW may still name AgentAction; MB-CV-012 records this stale-tracker defect. Durable branch/result/receipt authority is current.",
   "next_action": "Execute Evidence Gate Stage008B under unchanged CVB-007 and frozen Stage008 authority; then Pushgate. Do not run MetaBlooms Stage009 or Stage010 yet."
 }
