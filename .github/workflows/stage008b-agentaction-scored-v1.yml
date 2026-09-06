@@ -1,0 +1,412 @@
+name: Stage008B AgentAction scored holdout v1
+
+on:
+  push:
+    branches:
+      - benchmark/stage008b-agentaction-scored-v1-20260906
+    paths:
+      - .github/workflows/stage008b-agentaction-scored-v1.yml
+      - benchmark/stage008b/agentaction/HOLDOUT_V1.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scored-holdout:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout frozen AgentAction pin
+        uses: actions/checkout@v4
+        with:
+          repository: dinpd/AgentAction
+          ref: 4dd2fdf73b894f8326cc76a3fd13b705695d140e
+          path: vendor/AgentAction
+          persist-credentials: false
+      - name: Verify frozen authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C vendor/AgentAction rev-parse HEAD)" = "4dd2fdf73b894f8326cc76a3fd13b705695d140e"
+          echo '71e7754ef08e92132e52c4386fc73a1d69d157aa2cb2f2d13d7a1d51e8613161  benchmark/stage008b/agentaction/HOLDOUT_V1.json' | sha256sum -c -
+          python - <<'PY'
+          import json
+          p='benchmark/stage008b/agentaction/HOLDOUT_V1.json'
+          x=json.load(open(p))
+          assert x['benchmark_id']=='CVB-007-20260905'
+          assert x['competitor']['pin']=='4dd2fdf73b894f8326cc76a3fd13b705695d140e'
+          assert x['freeze_contract']['no_adapter_tuning_after_freeze'] is True
+          assert x['freeze_contract']['scored_harness_must_read_this_fixture'] is True
+          print('FROZEN_AUTHORITY=PASS')
+          PY
+      - name: Install pinned dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd vendor/AgentAction/cloudflare
+          npm ci
+      - name: Append frozen scored harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >> vendor/AgentAction/cloudflare/tests/worker.test.ts <<'TS'
+
+          const METABLOOMS_SCORED_HOLDOUT: any = JSON.parse(process.env.METABLOOMS_HOLDOUT_JSON || "{}");
+
+          function mbScoredManifest(policyVersion: string): any {
+            const manifest: any = deployManifest();
+            manifest.runtime = { ...(manifest.runtime || {}), policy_version: policyVersion };
+            return manifest;
+          }
+
+          function mbScoredApproval(variant: any, approvalId: string, idempotencyKey: string, changeRequestId: string, commitSha: string, policyVersion: string): any {
+            const h = METABLOOMS_SCORED_HOLDOUT.shared;
+            return {
+              approval_id: approvalId,
+              tool: h.tool,
+              action: h.action,
+              resource: h.resource,
+              requested_by: h.user_id,
+              user_id: h.user_id,
+              reason: `MetaBlooms scored ${variant.variant_id}`,
+              job_id: h.job_id,
+              environment: h.environment,
+              service_id: h.service_id,
+              repo: h.repo,
+              branch: h.branch,
+              commit_sha: commitSha,
+              change_request_id: changeRequestId,
+              workflow_id: h.workflow_id,
+              idempotency_key: idempotencyKey,
+              policy_version: policyVersion,
+            };
+          }
+
+          function mbScoredGrantRequest(approval: any): any {
+            return {
+              tool: approval.tool,
+              action: approval.action,
+              resource: approval.resource,
+              approval_id: approval.approval_id,
+              user_id: approval.user_id,
+              job_id: approval.job_id,
+              environment: approval.environment,
+              service_id: approval.service_id,
+              repo: approval.repo,
+              branch: approval.branch,
+              commit_sha: approval.commit_sha,
+              change_request_id: approval.change_request_id,
+              workflow_id: approval.workflow_id,
+              idempotency_key: approval.idempotency_key,
+              policy_version: approval.policy_version,
+            };
+          }
+
+          function mbScoredMarker(id: string, payload: Record<string, unknown>): void {
+            console.log(`METABLOOMS_SCORED_${id}=` + JSON.stringify(payload));
+          }
+
+          test("metablooms scored S0 clean current proof positive control", async () => {
+            const h = METABLOOMS_SCORED_HOLDOUT;
+            const v = h.variants.S0;
+            const namespace = new MemoryNamespace();
+            const env: Record<string, any> = {
+              JIT_GRANTS: namespace,
+              AGENTID_GITHUB_API_BASE: "https://github-api.example",
+              AGENTID_GITHUB_TOKEN: "github-token",
+              AGENTID_MANIFEST_JSON: JSON.stringify(mbScoredManifest(h.shared.g0)),
+            };
+            const ctx = new TestContext();
+            const calls: Array<{ url: string; init?: RequestInit }> = [];
+            const originalFetch = globalThis.fetch;
+            globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+              calls.push({ url: String(input), init });
+              return new Response(null, { status: 204 });
+            };
+            try {
+              const approval = mbScoredApproval(v, v.approval_id, v.idempotency_key, v.change_request_id, h.shared.c0_commit_sha, h.shared.g0);
+              const created = await call(env, ctx, "POST", "/approval-requests", approval);
+              const approved = await call(env, ctx, "POST", `/approval-requests/${v.approval_id}/approve`, { decided_by: "release-manager-scored", decision_reason: "current candidate and change reviewed" });
+              const grantReq = mbScoredGrantRequest(approval);
+              const grant = await call(env, ctx, "POST", "/jit-grants", grantReq);
+              const dispatch = await call(env, ctx, "POST", "/github-actions/dispatch", { agent_id: "platform-release-agent", ...grantReq, approved: true, jit_grant_id: grant.body?.jit_grant_id });
+              await ctx.flush();
+              const audit = await call(env, ctx, "GET", `/audit/events?approval_id=${v.approval_id}&limit=30`);
+              mbScoredMarker("S0", {
+                variant_id: v.variant_id,
+                created_status: created.status,
+                approved_status: approved.status,
+                grant_status: grant.status,
+                dispatch_status: dispatch.status,
+                provider_calls: calls.length,
+                provider_commit_sha: calls[0] ? JSON.parse(String(calls[0].init?.body)).inputs.commit_sha : null,
+                approval_policy_version: grant.body?.evidence?.policy_version ?? null,
+                audit_types: audit.body?.events?.map((e: any) => e.type) ?? [],
+              });
+            } finally { globalThis.fetch = originalFetch; }
+          });
+
+          test("metablooms scored S1 stale governing state", async () => {
+            const h = METABLOOMS_SCORED_HOLDOUT;
+            const v = h.variants.S1;
+            const namespace = new MemoryNamespace();
+            const g0 = mbScoredManifest(h.shared.g0);
+            const env: Record<string, any> = {
+              JIT_GRANTS: namespace,
+              AGENTID_GITHUB_API_BASE: "https://github-api.example",
+              AGENTID_GITHUB_TOKEN: "github-token",
+              AGENTID_MANIFEST_JSON: JSON.stringify(g0),
+            };
+            const ctx = new TestContext();
+            const calls: Array<{ url: string; init?: RequestInit }> = [];
+            const originalFetch = globalThis.fetch;
+            globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+              calls.push({ url: String(input), init });
+              return new Response(null, { status: 204 });
+            };
+            try {
+              const approval = mbScoredApproval(v, v.approval_id, v.idempotency_key, v.change_request_id, h.shared.c0_commit_sha, h.shared.g0);
+              const created = await call(env, ctx, "POST", "/approval-requests", approval);
+              const approved = await call(env, ctx, "POST", `/approval-requests/${v.approval_id}/approve`, { decided_by: "release-manager-scored", decision_reason: "G0 reviewed" });
+              const grantReq = mbScoredGrantRequest(approval);
+              const grant = await call(env, ctx, "POST", "/jit-grants", grantReq);
+              const g1 = mbScoredManifest(h.shared.g1);
+              const deployTool = g1.tools.find((x: any) => x.name === h.shared.tool);
+              deployTool.constraints.allowed_values.service_id = [h.shared.service_id, "checkout-api-canary"];
+              env.AGENTID_MANIFEST_JSON = JSON.stringify(g1);
+              const dispatch = await call(env, ctx, "POST", "/github-actions/dispatch", { agent_id: "platform-release-agent", ...grantReq, approved: true, jit_grant_id: grant.body?.jit_grant_id });
+              await ctx.flush();
+              const audit = await call(env, ctx, "GET", `/audit/events?approval_id=${v.approval_id}&limit=30`);
+              mbScoredMarker("S1", {
+                variant_id: v.variant_id,
+                created_status: created.status,
+                approved_status: approved.status,
+                grant_status: grant.status,
+                grant_policy_version: grant.body?.evidence?.policy_version ?? null,
+                current_policy_version: h.shared.g1,
+                dispatch_status_after_g1: dispatch.status,
+                provider_calls: calls.length,
+                provider_commit_sha: calls[0] ? JSON.parse(String(calls[0].init?.body)).inputs.commit_sha : null,
+                dispatch_approval_policy_version: dispatch.body?.approval_evidence?.policy_version ?? null,
+                audit_types: audit.body?.events?.map((e: any) => e.type) ?? [],
+              });
+            } finally { globalThis.fetch = originalFetch; }
+          });
+
+          test("metablooms scored S2 expired task authorization replay", async () => {
+            const h = METABLOOMS_SCORED_HOLDOUT;
+            const v = h.variants.S2;
+            const namespace = new MemoryNamespace();
+            const env: Record<string, any> = {
+              JIT_GRANTS: namespace,
+              AGENTID_GITHUB_API_BASE: "https://github-api.example",
+              AGENTID_GITHUB_TOKEN: "github-token",
+              AGENTID_MANIFEST_JSON: JSON.stringify(mbScoredManifest(h.shared.g0)),
+            };
+            const ctx = new TestContext();
+            const calls: Array<{ url: string; init?: RequestInit }> = [];
+            const originalFetch = globalThis.fetch;
+            globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+              calls.push({ url: String(input), init });
+              return new Response(null, { status: 204 });
+            };
+            try {
+              const a0 = mbScoredApproval(v, v.a0_approval_id, v.a0_idempotency_key, v.change_request_id, h.shared.c0_commit_sha, h.shared.g0);
+              const a0Created = await call(env, ctx, "POST", "/approval-requests", a0);
+              const a0Approved = await call(env, ctx, "POST", `/approval-requests/${v.a0_approval_id}/approve`, { decided_by: "release-manager-scored", decision_reason: "A0 current" });
+              const a0GrantReq = mbScoredGrantRequest(a0);
+              const a0Grant = await call(env, ctx, "POST", "/jit-grants", a0GrantReq);
+
+              const a1 = mbScoredApproval(v, v.a1_approval_id, v.a1_idempotency_key, v.change_request_id, h.shared.c0_commit_sha, h.shared.g0);
+              const a1Created = await call(env, ctx, "POST", "/approval-requests", a1);
+              const a1Approved = await call(env, ctx, "POST", `/approval-requests/${v.a1_approval_id}/approve`, { decided_by: "release-manager-scored", decision_reason: "A1 replacement authorization" });
+
+              const stored = namespace.stores.get("platform-release-agent");
+              const grantRecord = stored?.get(a0Grant.body?.jit_grant_id) as Record<string, unknown> | undefined;
+              if (grantRecord) {
+                grantRecord.expires_at = "2000-01-01T00:00:00.000Z";
+                stored?.set(String(a0Grant.body?.jit_grant_id), grantRecord);
+              }
+              const replay = await call(env, ctx, "POST", "/github-actions/dispatch", { agent_id: "platform-release-agent", ...a0GrantReq, approved: true, jit_grant_id: a0Grant.body?.jit_grant_id });
+              await ctx.flush();
+              const audit0 = await call(env, ctx, "GET", `/audit/events?approval_id=${v.a0_approval_id}&limit=30`);
+              const audit1 = await call(env, ctx, "GET", `/audit/events?approval_id=${v.a1_approval_id}&limit=30`);
+              mbScoredMarker("S2", {
+                variant_id: v.variant_id,
+                a0_create_status: a0Created.status,
+                a0_approve_status: a0Approved.status,
+                a0_grant_status: a0Grant.status,
+                a1_create_status: a1Created.status,
+                a1_approve_status: a1Approved.status,
+                replay_expired_a0_status: replay.status,
+                replay_expired_a0_body: replay.body,
+                provider_calls: calls.length,
+                a0_audit_types: audit0.body?.events?.map((e: any) => e.type) ?? [],
+                a1_audit_types: audit1.body?.events?.map((e: any) => e.type) ?? [],
+              });
+            } finally { globalThis.fetch = originalFetch; }
+          });
+
+          test("metablooms scored S4 evidence bound to wrong candidate", async () => {
+            const h = METABLOOMS_SCORED_HOLDOUT;
+            const v = h.variants.S4;
+            const namespace = new MemoryNamespace();
+            const env: Record<string, any> = {
+              JIT_GRANTS: namespace,
+              AGENTID_GITHUB_API_BASE: "https://github-api.example",
+              AGENTID_GITHUB_TOKEN: "github-token",
+              AGENTID_MANIFEST_JSON: JSON.stringify(mbScoredManifest(h.shared.g0)),
+            };
+            const ctx = new TestContext();
+            const calls: Array<{ url: string; init?: RequestInit }> = [];
+            const originalFetch = globalThis.fetch;
+            globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+              calls.push({ url: String(input), init });
+              return new Response(null, { status: 204 });
+            };
+            try {
+              const approval = mbScoredApproval(v, v.approval_id, v.idempotency_key, v.change_request_id, h.shared.c0_commit_sha, h.shared.g0);
+              const created = await call(env, ctx, "POST", "/approval-requests", approval);
+              const approved = await call(env, ctx, "POST", `/approval-requests/${v.approval_id}/approve`, { decided_by: "release-manager-scored", decision_reason: "C0 reviewed" });
+              const grantReq = mbScoredGrantRequest(approval);
+              const grant = await call(env, ctx, "POST", "/jit-grants", grantReq);
+              const wrongCandidate = await call(env, ctx, "POST", "/github-actions/dispatch", { agent_id: "platform-release-agent", ...grantReq, commit_sha: h.shared.c1_commit_sha, approved: true, jit_grant_id: grant.body?.jit_grant_id });
+              await ctx.flush();
+              const audit = await call(env, ctx, "GET", `/audit/events?approval_id=${v.approval_id}&limit=30`);
+              mbScoredMarker("S4", {
+                variant_id: v.variant_id,
+                created_status: created.status,
+                approved_status: approved.status,
+                grant_status: grant.status,
+                wrong_candidate_status: wrongCandidate.status,
+                wrong_candidate_body: wrongCandidate.body,
+                provider_calls: calls.length,
+                audit_types: audit.body?.events?.map((e: any) => e.type) ?? [],
+              });
+            } finally { globalThis.fetch = originalFetch; }
+          });
+
+          test("metablooms scored S5 superseded decision lineage", async () => {
+            const h = METABLOOMS_SCORED_HOLDOUT;
+            const v = h.variants.S5;
+            const namespace = new MemoryNamespace();
+            const env: Record<string, any> = {
+              JIT_GRANTS: namespace,
+              AGENTID_GITHUB_API_BASE: "https://github-api.example",
+              AGENTID_GITHUB_TOKEN: "github-token",
+              AGENTID_MANIFEST_JSON: JSON.stringify(mbScoredManifest(h.shared.g0)),
+            };
+            const ctx = new TestContext();
+            const calls: Array<{ url: string; init?: RequestInit }> = [];
+            const originalFetch = globalThis.fetch;
+            globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+              calls.push({ url: String(input), init });
+              return new Response(null, { status: 204 });
+            };
+            try {
+              const d0 = mbScoredApproval(v, v.d0_approval_id, v.idempotency_key, v.change_request_id, h.shared.c0_commit_sha, h.shared.g0);
+              const d0Created = await call(env, ctx, "POST", "/approval-requests", d0);
+              const d0Approved = await call(env, ctx, "POST", `/approval-requests/${v.d0_approval_id}/approve`, { decided_by: "release-manager-scored-a", decision_reason: "D0 allow" });
+              const d1 = mbScoredApproval(v, v.d1_approval_id, v.idempotency_key, v.change_request_id, h.shared.c0_commit_sha, h.shared.g0);
+              const d1Created = await call(env, ctx, "POST", "/approval-requests", d1);
+              const d1Denied = await call(env, ctx, "POST", `/approval-requests/${v.d1_approval_id}/deny`, { decided_by: "release-manager-scored-b", decision_reason: "D1 later deny for same scope" });
+              const d0GrantReq = mbScoredGrantRequest(d0);
+              const d0Grant = await call(env, ctx, "POST", "/jit-grants", d0GrantReq);
+              const d0Dispatch = await call(env, ctx, "POST", "/github-actions/dispatch", { agent_id: "platform-release-agent", ...d0GrantReq, approved: true, jit_grant_id: d0Grant.body?.jit_grant_id });
+              await ctx.flush();
+              const audit0 = await call(env, ctx, "GET", `/audit/events?approval_id=${v.d0_approval_id}&limit=30`);
+              const audit1 = await call(env, ctx, "GET", `/audit/events?approval_id=${v.d1_approval_id}&limit=30`);
+              mbScoredMarker("S5", {
+                variant_id: v.variant_id,
+                d0_create_status: d0Created.status,
+                d0_approve_status: d0Approved.status,
+                d1_create_status: d1Created.status,
+                d1_deny_status: d1Denied.status,
+                d0_grant_after_d1_status: d0Grant.status,
+                d0_dispatch_after_d1_status: d0Dispatch.status,
+                provider_calls: calls.length,
+                d0_audit_types: audit0.body?.events?.map((e: any) => e.type) ?? [],
+                d1_audit_types: audit1.body?.events?.map((e: any) => e.type) ?? [],
+              });
+            } finally { globalThis.fetch = originalFetch; }
+          });
+
+          test("metablooms scored S6 fresh authorization and requalification", async () => {
+            const h = METABLOOMS_SCORED_HOLDOUT;
+            const v = h.variants.S6;
+            const namespace = new MemoryNamespace();
+            const env: Record<string, any> = {
+              JIT_GRANTS: namespace,
+              AGENTID_GITHUB_API_BASE: "https://github-api.example",
+              AGENTID_GITHUB_TOKEN: "github-token",
+              AGENTID_MANIFEST_JSON: JSON.stringify(mbScoredManifest(h.shared.g1)),
+            };
+            const ctx = new TestContext();
+            const calls: Array<{ url: string; init?: RequestInit }> = [];
+            const originalFetch = globalThis.fetch;
+            globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+              calls.push({ url: String(input), init });
+              return new Response(null, { status: 204 });
+            };
+            try {
+              const c0 = mbScoredApproval(v, v.c0_approval_id, v.c0_idempotency_key, v.c0_change_request_id, h.shared.c0_commit_sha, h.shared.g1);
+              const c0Created = await call(env, ctx, "POST", "/approval-requests", c0);
+              const c0Approved = await call(env, ctx, "POST", `/approval-requests/${v.c0_approval_id}/approve`, { decided_by: "release-manager-scored", decision_reason: "C0 reviewed" });
+              const stale = await call(env, ctx, "POST", "/jit-grants", { ...mbScoredGrantRequest(c0), commit_sha: h.shared.c1_commit_sha, change_request_id: v.c1_change_request_id, idempotency_key: v.c1_idempotency_key });
+
+              const c1 = mbScoredApproval(v, v.c1_approval_id, v.c1_idempotency_key, v.c1_change_request_id, h.shared.c1_commit_sha, h.shared.g1);
+              const c1Created = await call(env, ctx, "POST", "/approval-requests", c1);
+              const c1Approved = await call(env, ctx, "POST", `/approval-requests/${v.c1_approval_id}/approve`, { decided_by: "release-manager-scored", decision_reason: "fresh C1 reviewed" });
+              const c1GrantReq = mbScoredGrantRequest(c1);
+              const c1Grant = await call(env, ctx, "POST", "/jit-grants", c1GrantReq);
+              const dispatch = await call(env, ctx, "POST", "/github-actions/dispatch", { agent_id: "platform-release-agent", ...c1GrantReq, approved: true, jit_grant_id: c1Grant.body?.jit_grant_id });
+              await ctx.flush();
+              const audit0 = await call(env, ctx, "GET", `/audit/events?approval_id=${v.c0_approval_id}&limit=30`);
+              const audit1 = await call(env, ctx, "GET", `/audit/events?approval_id=${v.c1_approval_id}&limit=30`);
+              mbScoredMarker("S6", {
+                variant_id: v.variant_id,
+                c0_create_status: c0Created.status,
+                c0_approve_status: c0Approved.status,
+                stale_c1_using_c0_status: stale.status,
+                stale_c1_using_c0_body: stale.body,
+                c1_create_status: c1Created.status,
+                c1_approve_status: c1Approved.status,
+                c1_grant_status: c1Grant.status,
+                c1_dispatch_status: dispatch.status,
+                provider_calls: calls.length,
+                provider_commit_sha: calls[0] ? JSON.parse(String(calls[0].init?.body)).inputs.commit_sha : null,
+                c0_audit_types: audit0.body?.events?.map((e: any) => e.type) ?? [],
+                c1_audit_types: audit1.body?.events?.map((e: any) => e.type) ?? [],
+              });
+            } finally { globalThis.fetch = originalFetch; }
+          });
+          TS
+      - name: Execute scored holdout exactly once
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p raw
+          export METABLOOMS_HOLDOUT_JSON="$(cat benchmark/stage008b/agentaction/HOLDOUT_V1.json)"
+          cd vendor/AgentAction/cloudflare
+          node --test --experimental-strip-types --test-name-pattern='metablooms scored S[012456]' tests/worker.test.ts 2>&1 | tee "$GITHUB_WORKSPACE/raw/scored-holdout.tap"
+      - name: Retain raw scored evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp benchmark/stage008b/agentaction/HOLDOUT_V1.json raw/HOLDOUT_V1.json
+          cp vendor/AgentAction/cloudflare/tests/worker.test.ts raw/worker.test.with-scored-harness.ts
+          grep 'METABLOOMS_SCORED_' raw/scored-holdout.tap | sed 's/^# //' > raw/scenario_markers.jsonl || true
+          printf 'benchmark_id=CVB-007-20260905\ncompetitor=AgentAction\nmode=NATIVE\nfrozen_upstream_pin=%s\nholdout_sha256=71e7754ef08e92132e52c4386fc73a1d69d157aa2cb2f2d13d7a1d51e8613161\n' "$(git -C vendor/AgentAction rev-parse HEAD)" > raw/run_metadata.txt
+          (cd raw && find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum) > raw/SHA256SUMS.txt
+      - name: Upload scored evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage008b-agentaction-scored-v1
+          path: raw/
+          if-no-files-found: error
