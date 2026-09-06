@@ -1,0 +1,35 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": "Revelara Orion",
+  "competitor_pin": "9b9e9567305122d439727989b3633abc05183bce",
+  "variant_id": "V1_ORION_DURABLE_RECOVERY_AUTHORITY_AND_PROOF_001",
+  "mode": "SCORED_HOLDOUT",
+  "frozen_authority": {
+    "stage007_markdown_sha256": "c741199270699f6696ab075fa5389b8bd6938d726a14bc43c9c892a6f5f2751e",
+    "stage007_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+    "original_orion_adapter_sha256": "3a4d55999c6a0f549f96c585d7174cea0337c079cfed5c996148bff5eb366a57",
+    "adapter_recovery_declaration_sha256": "7230bc6e88ead903aa9e4e5818b2c6547f34e838ded78165e9c4f3241c45d03e"
+  },
+  "repository_change": {
+    "r0_token": "ORION_R0_a53e17b4",
+    "r1_token": "ORION_R1_9c2d44ef"
+  },
+  "authority_change": {
+    "a0_token": "ORION_A0_17bf6c31",
+    "a1_token": "ORION_A1_82d4e590"
+  },
+  "candidate_binding": {
+    "c0_token": "ORION_C0_3fe18b62",
+    "c1_token": "ORION_C1_a7d9054c"
+  },
+  "qualification": {
+    "q0_token": "ORION_Q0_21ca709e",
+    "q1_token": "ORION_Q1_66b4d9f1"
+  },
+  "decision_lineage": {
+    "d0_token": "ORION_D0_e318f655",
+    "d1_token": "ORION_D1_7b42ac09"
+  },
+  "scored_scenarios": ["S0", "S1", "S2", "S3", "S4", "S5", "S6"],
+  "constraint": "Harness adapters may bridge only documented Orion interfaces. They may not change Stage007 semantics, strengthen applicability after observing outcomes, count harness-only archival as an Orion capability, or credit producer self-report as independent qualification. Unsupported behavior remains NOT_VERIFIED or NOT_APPLICABLE."
+}
