@@ -1,0 +1,135 @@
+name: Stage008B AgentAction native evidence
+
+on:
+  push:
+    branches:
+      - benchmark/stage008b-agentaction-20260906
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout evidence branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Checkout frozen AgentAction pin
+        uses: actions/checkout@v4
+        with:
+          repository: dinpd/AgentAction
+          ref: 4dd2fdf73b894f8326cc76a3fd13b705695d140e
+          path: vendor/AgentAction
+          persist-credentials: false
+
+      - name: Verify frozen pin and prepare evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p raw/pinned_source raw/logs
+          actual="$(git -C vendor/AgentAction rev-parse HEAD)"
+          test "$actual" = "4dd2fdf73b894f8326cc76a3fd13b705695d140e"
+          {
+            echo "benchmark_id=CVB-007-20260905"
+            echo "agentaction_pin=$actual"
+            echo "node=$(node --version)"
+            echo "npm=$(npm --version)"
+            git -C vendor/AgentAction show -s --format='commit=%H%ncommit_time=%cI%nsubject=%s' HEAD
+          } | tee raw/run_metadata.txt
+          cp vendor/AgentAction/cloudflare/package.json raw/pinned_source/cloudflare-package.json
+          cp vendor/AgentAction/cloudflare/package-lock.json raw/pinned_source/cloudflare-package-lock.json
+          cp vendor/AgentAction/cloudflare/tests/worker.test.ts raw/pinned_source/worker.test.ts
+          cp vendor/AgentAction/cloudflare/src/worker.ts raw/pinned_source/worker.ts
+          cp vendor/AgentAction/packages/guard/package.json raw/pinned_source/guard-package.json
+          cp vendor/AgentAction/packages/guard/package-lock.json raw/pinned_source/guard-package-lock.json
+          cp vendor/AgentAction/packages/guard/tests/guard.test.ts raw/pinned_source/guard.test.ts
+          cp vendor/AgentAction/packages/guard/src/index.ts raw/pinned_source/guard-index.ts
+          cp benchmark/stage008b/agentaction/FROZEN_CONTEXT.json raw/FROZEN_CONTEXT.json
+
+      - name: Install pinned Cloudflare test dependencies
+        working-directory: vendor/AgentAction/cloudflare
+        run: npm ci
+
+      - name: Run targeted native evidence tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd vendor/AgentAction/cloudflare
+          run_case() {
+            label="$1"
+            pattern="$2"
+            echo "=== $label :: $pattern ==="
+            set +e
+            node --test --experimental-strip-types --test-name-pattern="$pattern" tests/worker.test.ts 2>&1 | tee "$GITHUB_WORKSPACE/raw/logs/${label}.tap"
+            rc=${PIPESTATUS[0]}
+            set -e
+            echo "$rc" > "$GITHUB_WORKSPACE/raw/logs/${label}.rc"
+            if [ "$rc" -ne 0 ]; then
+              echo "targeted native test failed: $label" >&2
+              exit "$rc"
+            fi
+          }
+          run_case s0_s1_s4_deploy 'hosted production deploy gate dispatches GitHub workflow and binds rollback scope'
+          run_case s2_replay 'hosted approval runs once and records a correlated audit timeline'
+          run_case s1_scope_drift 'scope drift and expired approvals fail closed'
+          run_case s2_idempotent_provider 'hosted idempotency replays completed refund result and denies changed retry'
+
+      - name: Run full pinned native suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd vendor/AgentAction/cloudflare
+            npm test
+          ) 2>&1 | tee raw/logs/cloudflare-full.tap
+          (
+            cd vendor/AgentAction/packages/guard
+            npm ci
+            npm test
+          ) 2>&1 | tee raw/logs/guard-full.tap
+
+      - name: Inventory deploy and authority assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json, re
+          p = Path('vendor/AgentAction/cloudflare/tests/worker.test.ts')
+          text = p.read_text()
+          names = re.findall(r'test\("([^"]+)"', text)
+          keywords = ('deploy', 'approval', 'grant', 'replay', 'idempot', 'scope drift', 'audit', 'intent')
+          selected = [n for n in names if any(k in n.lower() for k in keywords)]
+          out = {
+              'schema': 'metablooms.stage008b.agentaction.native_test_inventory.v1',
+              'test_count': len(names),
+              'selected_test_names': selected,
+              'source_sha256': __import__('hashlib').sha256(text.encode()).hexdigest(),
+          }
+          Path('raw/native_test_inventory.json').write_text(json.dumps(out, indent=2, sort_keys=True) + '\n')
+          PY
+
+      - name: Hash retained raw evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd raw
+            find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum
+          ) > raw/SHA256SUMS.txt
+
+      - name: Upload scored native evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage008b-agentaction-native-evidence
+          path: raw/
+          if-no-files-found: error
+          include-hidden-files: false
