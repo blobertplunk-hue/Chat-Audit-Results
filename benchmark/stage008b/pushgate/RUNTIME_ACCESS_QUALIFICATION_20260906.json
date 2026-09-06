@@ -1,0 +1,11 @@
+{
+  "classification_rule": "Do not infer scenario pass/fail from public documentation when provider runtime cannot be exercised.",
+  "credential_env_keys": [],
+  "credential_env_present": false,
+  "holdout_freeze_commit": "dfa8b3e5f0495ebc42110daaf452f86c6ad3a547",
+  "holdout_sha256": "737ddf230a3226915050dcdbea73dc64c13031f516df3d9410dab96a328803e9",
+  "repository_specific_remote_hits": [],
+  "repository_specific_remote_present": false,
+  "runtime_qualification": "UNAVAILABLE_NO_TENANT_CREDENTIAL_OR_REPOSITORY_REMOTE",
+  "schema": "metablooms.stage008b.pushgate.runtime_access_probe.v1"
+}
