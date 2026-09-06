@@ -1,0 +1,21 @@
+{
+  "schema": "metablooms.commercial_validation.stage_latest.v1",
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": "Pushgate",
+  "terminal_stage": "STAGE008B_PUSHGATE_HOSTED_RUNTIME_QUALIFICATION_COMPLETE",
+  "status": "COMPLETE",
+  "integrated_verdict": "NOT_END_TO_END",
+  "result": {
+    "json_path": "benchmark/stage008b/pushgate/METABLOOMS_STAGE008B_PUSHGATE_RESULT_20260906.json",
+    "json_sha256": "6bc5aa7737b2fb71f369c6e2d865ef29ff16de144d81e4752c327affbd8b7ccd",
+    "md_path": "benchmark/stage008b/pushgate/METABLOOMS_STAGE008B_PUSHGATE_RESULT_20260906.md",
+    "md_sha256": "924f0167a1fbdf9ce2a75df6e78bb25fd22611f38e9b5cc47cc89cd78cfee773"
+  },
+  "receipt_path": "benchmark/stage008b/pushgate/STAGE008B_PUSHGATE_RECEIPT_20260906.json",
+  "handoff_path": "benchmark/stage008b/pushgate/STAGE008B_PUSHGATE_HANDOFF_20260906.md",
+  "holdout_freeze_commit": "dfa8b3e5f0495ebc42110daaf452f86c6ad3a547",
+  "runtime_access_qualification": "UNAVAILABLE_NO_TENANT_CREDENTIAL_OR_REPOSITORY_REMOTE",
+  "external_competitor_cohort_status": "SUFFICIENTLY_CLOSED_WITH_DOCUMENTED_NOT_VERIFIED_PROVIDER_RUNTIME",
+  "supplemental_improvement_notes_path": "benchmark/meta-improvements/METABLOOMS_IMPROVEMENT_NOTES_STAGE008B_REMAINING_COHORT_20260906.md",
+  "next_action": "Run MetaBlooms Stage009 against unchanged CVB-007-20260905. Stage010 comparative differentiation remains prohibited until Stage009 is terminal."
+}
