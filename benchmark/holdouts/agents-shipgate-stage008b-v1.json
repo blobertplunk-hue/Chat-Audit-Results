@@ -1,0 +1,24 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": "Agents Shipgate",
+  "competitor_pin": "c41571f2d11eb5864b487f0ace40a84dfa8f385b",
+  "variant_id": "V1_REMOTE_REF_MOVEMENT_SHIPGATE_HOLDOUT_001",
+  "perturbation_family": "V1_REPOSITORY_CHANGE",
+  "target_ref": "refs/heads/benchmark/stage008b-agents-shipgate-target-20260905",
+  "remote_movement": {
+    "path": "benchmark-remote-state/holdout-advance.txt",
+    "content": "remote target advanced after authorization issuance; holdout token 9f42d3c1\n"
+  },
+  "wrong_candidate": {
+    "path": "src/holdout-wrong-candidate.txt",
+    "content": "candidate differs from the authorized verified commit; token 76a10eb4\n"
+  },
+  "fresh_candidate": {
+    "path": "src/holdout-fresh-candidate.txt",
+    "content": "fresh candidate qualified after stale-authority denial; token 0c51b8ef\n"
+  },
+  "frozen_adapter_sha256": "8103213961a197c21ffbe097f22f72193722f446ec6237e669d27c7773d68eab",
+  "benchmark_markdown_sha256": "c741199270699f6696ab075fa5389b8bd6938d726a14bc43c9c892a6f5f2751e",
+  "benchmark_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+  "constraint": "The scored harness may consume these perturbations but may not change the frozen adapter decision mapping or Stage007 scenario semantics after this commit."
+}
