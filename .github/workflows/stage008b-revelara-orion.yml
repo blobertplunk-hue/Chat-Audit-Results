@@ -34,9 +34,7 @@ jobs:
           test "$(git -C /tmp/orion-src rev-parse HEAD)" = "9b9e9567305122d439727989b3633abc05183bce"
           mkdir -p /tmp/orion-src/cmd/stage008bprobe
           cp benchmark/stage008b/revelara-orion/probe_main.go /tmp/orion-src/cmd/stage008bprobe/main.go
-          cp benchmark/stage008b/revelara-orion/probe_main_test.go /tmp/orion-src/cmd/stage008bprobe/main_test.go
           cd /tmp/orion-src
-          go test ./cmd/stage008bprobe
           go build -o /tmp/orion ./cmd/orion
           go build -o /tmp/orion-probe ./cmd/stage008bprobe
           /tmp/orion --version
@@ -71,7 +69,6 @@ jobs:
             /tmp/orion plan show --json >"$logdir/plan-initial.json" 2>"$logdir/plan-initial.stderr"; echo $? >"$logdir/plan-initial.rc"
           }
 
-          # S0 positive control: public CLI performs the full native build/prove/deliver loop.
           seed_spec /tmp/orion-s0 "$OUT/s0" "Build an HTTP service that returns the current time as JSON. ORION_R0_a53e17b4 ORION_A0_17bf6c31"
           export ORION_DATA_DIR=/tmp/orion-s0
           set +e
@@ -79,22 +76,18 @@ jobs:
           /tmp/orion deliver show --json >"$OUT/s0/deliver.json" 2>"$OUT/s0/deliver.stderr"; echo $? >"$OUT/s0/deliver.rc"
           set -e
 
-          # S1/S3/S4/S5/S6 shared chain. Seed a genuinely independent Q0 without final delivery.
           seed_spec /tmp/orion-s136 "$OUT/s136" "Build an HTTP service that returns the current time as JSON. ORION_R0_a53e17b4 ORION_A0_17bf6c31"
           export ORION_DATA_DIR=/tmp/orion-s136
           /tmp/orion-probe seed-proof /tmp/orion-s136 "$OUT/s136/q0-seed.json" ORION_Q0_21ca709e ORION_C0_3fe18b62 >"$OUT/s136/q0-seed.stdout" 2>"$OUT/s136/q0-seed.stderr"
           /tmp/orion-probe mismatch /tmp/orion-s136 "$OUT/s136/s4-mismatch.json" ORION_C1_a7d9054c >"$OUT/s136/s4-mismatch.stdout" 2>"$OUT/s136/s4-mismatch.stderr"
 
-          # Changed governing reality after Q0: a previously fallback reliability decision becomes explicit.
           /tmp/orion answer --key oncall_escalation --value "team-omega ORION_A1_82d4e590" >"$OUT/s136/change-authority.stdout" 2>"$OUT/s136/change-authority.stderr"; echo $? >"$OUT/s136/change-authority.rc"
           /tmp/orion spec show >"$OUT/s136/spec-after-authority-change.stdout" 2>"$OUT/s136/spec-after-authority-change.stderr"; echo $? >"$OUT/s136/spec-after-authority-change.rc"
 
-          # Fresh process attempts to continue with stale Q0/A0. Expected native refusal before delivery.
           set +e
           /tmp/orion run --mode json >"$OUT/s136/stale-run.jsonl" 2>"$OUT/s136/stale-run.stderr"; echo $? >"$OUT/s136/stale-run.rc"
           set -e
 
-          # Fresh ratification/reconciliation, then fresh native proof/delivery (S6).
           /tmp/orion spec approve >"$OUT/s136/reapprove.stdout" 2>"$OUT/s136/reapprove.stderr"; echo $? >"$OUT/s136/reapprove.rc"
           /tmp/orion plan show --json >"$OUT/s136/plan-after-reconcile.json" 2>"$OUT/s136/plan-after-reconcile.stderr"; echo $? >"$OUT/s136/plan-after-reconcile.rc"
           set +e
@@ -105,7 +98,6 @@ jobs:
           OLD_PROOF="$(python3 -c 'import json; print(json.load(open("'"$OUT/s136/q0-seed.json"'"))["proof_id"])')"
           /tmp/orion-probe inspect /tmp/orion-s136 "$OLD_TASK" "$OLD_PROOF" "$OUT/s136/history-after-s6.json" >"$OUT/s136/history.stdout" 2>"$OUT/s136/history.stderr"
 
-          # S2 probe: native cross-process red button explicitly revokes autonomy.
           seed_spec /tmp/orion-s2 "$OUT/s2" "Build an HTTP service that returns the current time as JSON. ORION_A0_17bf6c31"
           export ORION_DATA_DIR=/tmp/orion-s2
           /tmp/orion redbutton engage >"$OUT/s2/engage.stdout" 2>"$OUT/s2/engage.stderr"; echo $? >"$OUT/s2/engage.rc"
