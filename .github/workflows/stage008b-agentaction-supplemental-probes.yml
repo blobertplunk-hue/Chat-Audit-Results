@@ -1,0 +1,349 @@
+name: Stage008B AgentAction supplemental probes
+
+on:
+  push:
+    branches:
+      - benchmark/stage008b-agentaction-20260906
+
+permissions:
+  contents: read
+
+jobs:
+  supplemental-probes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout frozen AgentAction pin
+        uses: actions/checkout@v4
+        with:
+          repository: dinpd/AgentAction
+          ref: 4dd2fdf73b894f8326cc76a3fd13b705695d140e
+          path: vendor/AgentAction
+          persist-credentials: false
+      - name: Verify exact pin and install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C vendor/AgentAction rev-parse HEAD)" = "4dd2fdf73b894f8326cc76a3fd13b705695d140e"
+          cd vendor/AgentAction/cloudflare
+          npm ci
+      - name: Append transparent MetaBlooms probes to pinned native test module
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >> vendor/AgentAction/cloudflare/tests/worker.test.ts <<'TS'
+
+          test("metablooms S1 stale governing-policy identity supplemental probe", async () => {
+            const namespace = new MemoryNamespace();
+            const g0: any = deployManifest();
+            g0.runtime = { ...(g0.runtime || {}), policy_version: "G0" };
+            const env: Record<string, any> = {
+              JIT_GRANTS: namespace,
+              AGENTID_GITHUB_API_BASE: "https://github-api.example",
+              AGENTID_GITHUB_TOKEN: "github-token",
+              AGENTID_MANIFEST_JSON: JSON.stringify(g0),
+            };
+            const ctx = new TestContext();
+            const githubCalls: Array<{ url: string; init?: RequestInit }> = [];
+            const originalFetch = globalThis.fetch;
+            globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+              githubCalls.push({ url: String(input), init });
+              return new Response(null, { status: 204 });
+            };
+            try {
+              const approvalPayload = {
+                approval_id: "mb-s1-g0-approval",
+                tool: "devops.deploy.production",
+                action: "deploy",
+                resource: "service/checkout-api/environment/production",
+                requested_by: "release-1",
+                user_id: "release-1",
+                reason: "G0 approved deployment",
+                job_id: "production_deploy",
+                environment: "production",
+                service_id: "checkout-api",
+                repo: "github.com/example/checkout",
+                branch: "main",
+                commit_sha: "abc123def456",
+                change_request_id: "CHG-S1",
+                workflow_id: "deploy-production.yml",
+                idempotency_key: "mb-s1-abc123def456",
+                policy_version: "G0",
+              };
+              const created = await call(env, ctx, "POST", "/approval-requests", approvalPayload);
+              const approved = await call(env, ctx, "POST", "/approval-requests/mb-s1-g0-approval/approve", {
+                decided_by: "release-manager-1",
+                decision_reason: "G0 review complete",
+              });
+              const grantRequest = {
+                tool: approvalPayload.tool,
+                action: approvalPayload.action,
+                resource: approvalPayload.resource,
+                approval_id: approvalPayload.approval_id,
+                user_id: approvalPayload.user_id,
+                job_id: approvalPayload.job_id,
+                environment: approvalPayload.environment,
+                service_id: approvalPayload.service_id,
+                repo: approvalPayload.repo,
+                branch: approvalPayload.branch,
+                commit_sha: approvalPayload.commit_sha,
+                change_request_id: approvalPayload.change_request_id,
+                workflow_id: approvalPayload.workflow_id,
+                idempotency_key: approvalPayload.idempotency_key,
+                policy_version: "G0",
+              };
+              const grant = await call(env, ctx, "POST", "/jit-grants", grantRequest);
+
+              const g1: any = structuredClone(g0);
+              g1.runtime.policy_version = "G1";
+              const deployTool = g1.tools.find((entry: any) => entry.name === "devops.deploy.production");
+              deployTool.constraints.allowed_values.service_id = ["checkout-api", "checkout-api-canary"];
+              env.AGENTID_MANIFEST_JSON = JSON.stringify(g1);
+
+              const action = {
+                agent_id: "platform-release-agent",
+                ...grantRequest,
+                approved: true,
+                jit_grant_id: grant.body.jit_grant_id,
+              };
+              const afterRulesChange = await call(env, ctx, "POST", "/github-actions/dispatch", action);
+              await ctx.flush();
+              const audit = await call(env, ctx, "GET", "/audit/events?approval_id=mb-s1-g0-approval&limit=20");
+              console.log("METABLOOMS_S1_PROBE=" + JSON.stringify({
+                created_status: created.status,
+                approved_status: approved.status,
+                grant_status: grant.status,
+                grant_policy_version: grant.body?.evidence?.policy_version ?? null,
+                current_policy_version: "G1",
+                after_rules_change_status: afterRulesChange.status,
+                after_rules_change_body: afterRulesChange.body,
+                provider_calls: githubCalls.length,
+                audit_types: audit.body?.events?.map((event: any) => event.type) ?? [],
+              }));
+              assert.ok([200, 201, 403].includes(afterRulesChange.status));
+            } finally {
+              globalThis.fetch = originalFetch;
+            }
+          });
+
+          test("metablooms S5 later conflicting decision supplemental probe", async () => {
+            const namespace = new MemoryNamespace();
+            const manifest: any = deployManifest();
+            manifest.runtime = { ...(manifest.runtime || {}), policy_version: "G0" };
+            const env: Record<string, any> = { JIT_GRANTS: namespace, AGENTID_MANIFEST_JSON: JSON.stringify(manifest) };
+            const ctx = new TestContext();
+            const base = {
+              tool: "devops.deploy.production",
+              action: "deploy",
+              resource: "service/checkout-api/environment/production",
+              requested_by: "release-1",
+              user_id: "release-1",
+              reason: "same-scope decision lineage probe",
+              job_id: "production_deploy",
+              environment: "production",
+              service_id: "checkout-api",
+              repo: "github.com/example/checkout",
+              branch: "main",
+              commit_sha: "abc123def456",
+              change_request_id: "CHG-S5",
+              workflow_id: "deploy-production.yml",
+              idempotency_key: "mb-s5-abc123def456",
+              policy_version: "G0",
+            };
+            const d0 = await call(env, ctx, "POST", "/approval-requests", { approval_id: "mb-s5-d0", ...base });
+            const d0Approved = await call(env, ctx, "POST", "/approval-requests/mb-s5-d0/approve", {
+              decided_by: "release-manager-1",
+              decision_reason: "D0 allow",
+            });
+            const d1 = await call(env, ctx, "POST", "/approval-requests", { approval_id: "mb-s5-d1", ...base });
+            const d1Denied = await call(env, ctx, "POST", "/approval-requests/mb-s5-d1/deny", {
+              decided_by: "release-manager-2",
+              decision_reason: "D1 deny for same scope",
+            });
+            const d0Grant = await call(env, ctx, "POST", "/jit-grants", {
+              tool: base.tool,
+              action: base.action,
+              resource: base.resource,
+              approval_id: "mb-s5-d0",
+              user_id: base.user_id,
+              job_id: base.job_id,
+              environment: base.environment,
+              service_id: base.service_id,
+              repo: base.repo,
+              branch: base.branch,
+              commit_sha: base.commit_sha,
+              change_request_id: base.change_request_id,
+              workflow_id: base.workflow_id,
+              idempotency_key: base.idempotency_key,
+              policy_version: "G0",
+            });
+            await ctx.flush();
+            const auditD0 = await call(env, ctx, "GET", "/audit/events?approval_id=mb-s5-d0&limit=20");
+            const auditD1 = await call(env, ctx, "GET", "/audit/events?approval_id=mb-s5-d1&limit=20");
+            console.log("METABLOOMS_S5_PROBE=" + JSON.stringify({
+              d0_create_status: d0.status,
+              d0_approve_status: d0Approved.status,
+              d1_create_status: d1.status,
+              d1_deny_status: d1Denied.status,
+              old_d0_grant_after_d1_status: d0Grant.status,
+              old_d0_grant_after_d1_body: d0Grant.body,
+              d0_audit_types: auditD0.body?.events?.map((event: any) => event.type) ?? [],
+              d1_audit_types: auditD1.body?.events?.map((event: any) => event.type) ?? [],
+            }));
+            assert.ok([201, 400, 403].includes(d0Grant.status));
+          });
+
+          test("metablooms S6 fresh candidate requalification supplemental probe", async () => {
+            const namespace = new MemoryNamespace();
+            const manifest: any = deployManifest();
+            manifest.runtime = { ...(manifest.runtime || {}), policy_version: "G1" };
+            const env: Record<string, any> = {
+              JIT_GRANTS: namespace,
+              AGENTID_GITHUB_API_BASE: "https://github-api.example",
+              AGENTID_GITHUB_TOKEN: "github-token",
+              AGENTID_MANIFEST_JSON: JSON.stringify(manifest),
+            };
+            const ctx = new TestContext();
+            const githubCalls: Array<{ url: string; init?: RequestInit }> = [];
+            const originalFetch = globalThis.fetch;
+            globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+              githubCalls.push({ url: String(input), init });
+              return new Response(null, { status: 204 });
+            };
+            try {
+              const c0 = {
+                approval_id: "mb-s6-c0",
+                tool: "devops.deploy.production",
+                action: "deploy",
+                resource: "service/checkout-api/environment/production",
+                requested_by: "release-1",
+                user_id: "release-1",
+                reason: "C0 approval",
+                job_id: "production_deploy",
+                environment: "production",
+                service_id: "checkout-api",
+                repo: "github.com/example/checkout",
+                branch: "main",
+                commit_sha: "abc123def456",
+                change_request_id: "CHG-S6-C0",
+                workflow_id: "deploy-production.yml",
+                idempotency_key: "mb-s6-c0",
+                policy_version: "G1",
+              };
+              const c0Created = await call(env, ctx, "POST", "/approval-requests", c0);
+              await call(env, ctx, "POST", "/approval-requests/mb-s6-c0/approve", {
+                decided_by: "release-manager-1",
+                decision_reason: "C0 reviewed",
+              });
+              const staleForC1 = await call(env, ctx, "POST", "/jit-grants", {
+                ...c0,
+                approval_id: "mb-s6-c0",
+                commit_sha: "def456abc123",
+                change_request_id: "CHG-S6-C1",
+                idempotency_key: "mb-s6-c1",
+              });
+
+              const c1 = {
+                ...c0,
+                approval_id: "mb-s6-c1",
+                reason: "Fresh C1 approval after stale denial",
+                commit_sha: "def456abc123",
+                change_request_id: "CHG-S6-C1",
+                idempotency_key: "mb-s6-c1",
+              };
+              const c1Created = await call(env, ctx, "POST", "/approval-requests", c1);
+              const c1Approved = await call(env, ctx, "POST", "/approval-requests/mb-s6-c1/approve", {
+                decided_by: "release-manager-2",
+                decision_reason: "Fresh C1 commit reviewed",
+              });
+              const c1Grant = await call(env, ctx, "POST", "/jit-grants", {
+                tool: c1.tool,
+                action: c1.action,
+                resource: c1.resource,
+                approval_id: c1.approval_id,
+                user_id: c1.user_id,
+                job_id: c1.job_id,
+                environment: c1.environment,
+                service_id: c1.service_id,
+                repo: c1.repo,
+                branch: c1.branch,
+                commit_sha: c1.commit_sha,
+                change_request_id: c1.change_request_id,
+                workflow_id: c1.workflow_id,
+                idempotency_key: c1.idempotency_key,
+                policy_version: "G1",
+              });
+              const dispatch = await call(env, ctx, "POST", "/github-actions/dispatch", {
+                agent_id: "platform-release-agent",
+                tool: c1.tool,
+                action: c1.action,
+                resource: c1.resource,
+                approval_id: c1.approval_id,
+                user_id: c1.user_id,
+                job_id: c1.job_id,
+                environment: c1.environment,
+                service_id: c1.service_id,
+                repo: c1.repo,
+                branch: c1.branch,
+                commit_sha: c1.commit_sha,
+                change_request_id: c1.change_request_id,
+                workflow_id: c1.workflow_id,
+                idempotency_key: c1.idempotency_key,
+                policy_version: "G1",
+                approved: true,
+                jit_grant_id: c1Grant.body?.jit_grant_id,
+              });
+              await ctx.flush();
+              const c0Audit = await call(env, ctx, "GET", "/audit/events?approval_id=mb-s6-c0&limit=20");
+              const c1Audit = await call(env, ctx, "GET", "/audit/events?approval_id=mb-s6-c1&limit=20");
+              console.log("METABLOOMS_S6_PROBE=" + JSON.stringify({
+                c0_create_status: c0Created.status,
+                stale_c1_using_c0_status: staleForC1.status,
+                stale_c1_using_c0_body: staleForC1.body,
+                c1_create_status: c1Created.status,
+                c1_approve_status: c1Approved.status,
+                c1_grant_status: c1Grant.status,
+                c1_dispatch_status: dispatch.status,
+                c1_dispatch_body: dispatch.body,
+                provider_calls: githubCalls.length,
+                provider_commit_sha: githubCalls[0] ? JSON.parse(String(githubCalls[0].init?.body)).inputs.commit_sha : null,
+                c0_audit_types: c0Audit.body?.events?.map((event: any) => event.type) ?? [],
+                c1_audit_types: c1Audit.body?.events?.map((event: any) => event.type) ?? [],
+              }));
+              assert.equal(staleForC1.status, 400);
+              assert.equal(c1Created.status, 201);
+              assert.equal(c1Approved.status, 200);
+              assert.equal(c1Grant.status, 201);
+              assert.equal(dispatch.status, 201);
+              assert.equal(githubCalls.length, 1);
+              assert.equal(JSON.parse(String(githubCalls[0].init?.body)).inputs.commit_sha, "def456abc123");
+            } finally {
+              globalThis.fetch = originalFetch;
+            }
+          });
+          TS
+      - name: Run only supplemental probes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p raw
+          cd vendor/AgentAction/cloudflare
+          node --test --experimental-strip-types --test-name-pattern='metablooms S[156]' tests/worker.test.ts 2>&1 | tee "$GITHUB_WORKSPACE/raw/supplemental-probes.tap"
+      - name: Retain exact probe source and hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp vendor/AgentAction/cloudflare/tests/worker.test.ts raw/worker.test.with-supplemental-probes.ts
+          cp benchmark/stage008b/agentaction/FROZEN_CONTEXT.json raw/FROZEN_CONTEXT.json
+          printf 'frozen_upstream_pin=%s\n' "$(git -C vendor/AgentAction rev-parse HEAD)" > raw/run_metadata.txt
+          (cd raw && find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum) > raw/SHA256SUMS.txt
+      - name: Upload supplemental probe evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage008b-agentaction-supplemental-probes
+          path: raw/
+          if-no-files-found: error
