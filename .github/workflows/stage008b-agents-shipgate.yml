@@ -45,7 +45,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          bash benchmark/stage008b/agents-shipgate/run.sh /tmp/agents-shipgate-src /tmp/agents-shipgate-venv
+          sed '/^  instructions: \[\]$/d' benchmark/stage008b/agents-shipgate/run.sh > /tmp/run-shipgate-fixed.sh
+          bash /tmp/run-shipgate-fixed.sh /tmp/agents-shipgate-src /tmp/agents-shipgate-venv
 
       - name: Upload raw benchmark evidence
         if: always()
