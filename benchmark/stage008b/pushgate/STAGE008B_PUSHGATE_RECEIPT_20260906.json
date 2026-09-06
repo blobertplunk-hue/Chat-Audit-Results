@@ -1,0 +1,17 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": "Pushgate",
+  "holdout": {"freeze_commit":"dfa8b3e5f0495ebc42110daaf452f86c6ad3a547","frozen_before_runtime_qualification":true,"sha256":"737ddf230a3226915050dcdbea73dc64c13031f516df3d9410dab96a328803e9"},
+  "integrated_verdict": "NOT_END_TO_END",
+  "metablooms_stage009_self_run_performed": false,
+  "mode": "HOSTED_EXTERNAL",
+  "next_action": "Run MetaBlooms Stage009 against unchanged CVB-007-20260905; then perform Stage010 comparative differentiation only after Stage009 is terminal.",
+  "result_json_sha256": "6bc5aa7737b2fb71f369c6e2d865ef29ff16de144d81e4752c327affbd8b7ccd",
+  "result_md_sha256": "924f0167a1fbdf9ce2a75df6e78bb25fd22611f38e9b5cc47cc89cd78cfee773",
+  "runtime_access": {"credential_env_present":false,"qualification":"UNAVAILABLE_NO_TENANT_CREDENTIAL_OR_REPOSITORY_REMOTE","qualification_sha256":"f049c64c14757d50f69e40e71b15f9c55cdc4b76669aeaee7ce1aad1076b4b81","repository_specific_remote_present":false},
+  "scenario_results": {"S0":"NOT_VERIFIED","S1":"NOT_VERIFIED","S2":"NOT_APPLICABLE","S3":"NOT_APPLICABLE","S4":"NOT_VERIFIED","S5":"NOT_VERIFIED","S6":"NOT_VERIFIED"},
+  "schema": "metablooms.commercial_validation.stage_receipt.v1",
+  "stage": "STAGE008B_PUSHGATE_HOSTED_RUNTIME_QUALIFICATION_COMPLETE",
+  "stage010_differentiation_adjudication_performed": false,
+  "status": "COMPLETE"
+}
