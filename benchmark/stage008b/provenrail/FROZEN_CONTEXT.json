@@ -1,0 +1,43 @@
+{
+  "schema": "metablooms.stage008b.provenrail.frozen_context.v1",
+  "benchmark_id": "CVB-007-20260905",
+  "benchmark_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+  "result_schema_sha256": "68101fa8cde944768831e687104c25afd871aab87df547d43baa31eda32d4254",
+  "competitor": {
+    "competitor_id": "provenrail",
+    "display_name": "Provenrail",
+    "repository_url": "https://github.com/pofky/provenrail",
+    "pin_type": "source_snapshot",
+    "pin": "b4b890699f859b2cbf607bb871daea0821679aaf",
+    "observed_version": "0.2.33",
+    "commit_observed_at": "2026-08-22T05:40:30Z",
+    "retrieved_at": "2026-09-05T20:26:00-05:00",
+    "mode": "NATIVE"
+  },
+  "frozen_applicability": {
+    "S0": "NOT_APPLICABLE",
+    "S1": "NOT_APPLICABLE",
+    "S2": "LIKELY_APPLICABLE",
+    "S3": "NOT_APPLICABLE",
+    "S4": "NOT_APPLICABLE",
+    "S5": "APPLICABLE",
+    "S6": "NOT_APPLICABLE"
+  },
+  "authority_boundary": "native tool-call guard/approval authority plus signed hash-chained evidence and offline verification; not repository-candidate promotion authority",
+  "planned_evidence": [
+    "signed decision receipts",
+    "hash-chain predecessor links",
+    "approval/guardrail records",
+    "offline verifier output",
+    "bundle/pin metadata",
+    "stdout/stderr/exit codes"
+  ],
+  "execution_constraints": {
+    "do_not_change_frozen_benchmark": true,
+    "do_not_expand_not_applicable_scenarios": true,
+    "holdout_required_before_scored_harness": true,
+    "stage009_self_run_performed": false,
+    "stage010_differentiation_performed": false
+  },
+  "known_packaging_gap": "Stage008 authority names adapters/provenrail.json, but that adapter was absent from the continuation package; native pinned source is therefore the calibration authority."
+}
