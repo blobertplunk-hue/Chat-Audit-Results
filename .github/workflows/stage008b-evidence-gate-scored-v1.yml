@@ -1,0 +1,140 @@
+name: Stage008B Evidence Gate scored holdout v1
+
+on:
+  push:
+    branches:
+      - benchmark/stage008b-evidence-gate-scored-v1-20260906
+    paths:
+      - '.github/workflows/stage008b-evidence-gate-scored-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scored:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout scored branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Verify frozen holdout authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "24a98e9b603de9fa17706d7ff4f497f802d2c374"
+          test "$(sha256sum benchmark/stage008b/evidence-gate/HOLDOUT_V1.json | awk '{print $1}')" = "dbce44f1e5733c505f07f28f7c559054b088bb4a5c73d8d78a31319a4e05ae65"
+
+      - name: Checkout exact Evidence Gate pin
+        uses: actions/checkout@v4
+        with:
+          repository: evidence-gate/evidence-gate-action
+          ref: 3f478e1f3d3c5050725f15ecf9cdb4ff5eb9ea75
+          path: evidence-gate-action
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install native test dependencies
+        run: python -m pip install pytest pyyaml
+
+      - name: Run pinned native reference tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p raw/evidence-gate-scored/native raw/evidence-gate-scored/scenarios raw/evidence-gate-scored/source
+          (cd evidence-gate-action && pytest -q) 2>&1 | tee raw/evidence-gate-scored/native/tests.log
+          cp evidence-gate-action/src/local_evaluator.py raw/evidence-gate-scored/source/local_evaluator.py
+          cp evidence-gate-action/action.yml raw/evidence-gate-scored/source/action.yml
+          cp benchmark/stage008b/evidence-gate/HOLDOUT_V1.json raw/evidence-gate-scored/HOLDOUT_V1.json
+          git -C evidence-gate-action show -s --format='%H%n%cI%n%s' HEAD > raw/evidence-gate-scored/source/pin_metadata.txt
+
+      - name: Execute frozen holdout without outcome assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > raw/evidence-gate-scored/run_holdout.py <<'PY'
+          import json, pathlib, sys
+          sys.path.insert(0, str(pathlib.Path('evidence-gate-action/src').resolve()))
+          from local_evaluator import evaluate_local
+
+          hold=json.loads(pathlib.Path('benchmark/stage008b/evidence-gate/HOLDOUT_V1.json').read_text())
+          root=pathlib.Path('raw/evidence-gate-scored/fixtures'); root.mkdir(parents=True,exist_ok=True)
+          outdir=pathlib.Path('raw/evidence-gate-scored/scenarios')
+          c0=hold['shared']['candidate_c0_sha256']; c1=hold['shared']['candidate_c1_sha256']
+
+          def stmt(digest,label):
+              return {
+                '_type':'https://in-toto.io/Statement/v1',
+                'subject':[{'name':label,'digest':{'sha256':digest}}],
+                'predicateType':'https://slsa.dev/provenance/v1',
+                'predicate':{'buildDefinition':{'buildType':'metablooms/holdout'},'runDetails':{'builder':{'id':'metablooms-scored'}}}
+              }
+          p0=root/'c0.json'; p0.write_text(json.dumps(stmt(c0,'candidate-c0')))
+          p1=root/'c1.json'; p1.write_text(json.dumps(stmt(c1,'candidate-c1')))
+          missing=root/'missing.json'
+
+          rows={}
+          rows['S0']={
+            'variant':hold['variants']['S0'],
+            'external_current_candidate':c0,
+            'evaluation':evaluate_local('provenance',hold['shared']['phase_prefix']+'-S0',[str(p0)])
+          }
+          before=evaluate_local('provenance',hold['shared']['phase_prefix']+'-S1-G0',[str(p0)])
+          after=evaluate_local('provenance',hold['shared']['phase_prefix']+'-S1-G1',[str(p0)])
+          rows['S1']={
+            'variant':hold['variants']['S1'],
+            'baseline_before':hold['shared']['baseline_g0'],
+            'baseline_after':hold['shared']['baseline_g1'],
+            'evidence_bytes_unchanged':True,
+            'before':before,
+            'after_external_baseline_change':after
+          }
+          rows['S2']={'variant':hold['variants']['S2'],'applicability':'NOT_APPLICABLE'}
+          rows['S3']={'variant':hold['variants']['S3'],'applicability':'NOT_APPLICABLE'}
+          rows['S4']={
+            'variant':hold['variants']['S4'],
+            'external_expected_candidate':c1,
+            'evidence_subject_candidate':c0,
+            'evaluation':evaluate_local('provenance',hold['shared']['phase_prefix']+'-S4',[str(p0)])
+          }
+          d0=evaluate_local('provenance',hold['shared']['phase_prefix']+'-S5-D0',[str(p0)])
+          d1=evaluate_local('provenance',hold['shared']['phase_prefix']+'-S5-D1',[str(missing)])
+          d0_again=evaluate_local('provenance',hold['shared']['phase_prefix']+'-S5-D0-again',[str(p0)])
+          rows['S5']={
+            'variant':hold['variants']['S5'],
+            'D0_initial':d0,
+            'D1_later_same_scope':d1,
+            'D0_represented_after_D1':d0_again,
+            'hosted_chain_note':'No Pro/Enterprise credential is available in this lane; hosted evidence-chain supersession behavior is not exercised.'
+          }
+          stale=evaluate_local('provenance',hold['shared']['phase_prefix']+'-S6-stale',[str(missing)])
+          fresh=evaluate_local('provenance',hold['shared']['phase_prefix']+'-S6-fresh',[str(p1)])
+          rows['S6']={
+            'variant':hold['variants']['S6'],
+            'stale_or_missing_attempt':stale,
+            'fresh_c1_attempt':fresh,
+            'external_current_candidate':c1
+          }
+          for sid,row in rows.items():
+              (outdir/f'{sid}.json').write_text(json.dumps(row,indent=2,sort_keys=True)+'\n')
+          pathlib.Path('raw/evidence-gate-scored/SUMMARY.json').write_text(json.dumps({'scored_holdout':True,'rows':rows},indent=2,sort_keys=True)+'\n')
+          PY
+          python raw/evidence-gate-scored/run_holdout.py
+
+      - name: Build and verify scored artifact manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd raw/evidence-gate-scored && find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+
+      - name: Upload scored artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage008b-evidence-gate-scored-v1
+          path: raw/evidence-gate-scored
+          if-no-files-found: error
