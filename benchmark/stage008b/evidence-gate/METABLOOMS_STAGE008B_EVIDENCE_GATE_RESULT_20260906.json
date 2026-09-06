@@ -1,0 +1,57 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "benchmark_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+  "calibration": {
+    "artifact_id": 9997307357,
+    "artifact_sha256": "01ea1a9dfea84f64c1d8ad127ad54ce56eb471d6d646fa0df0d248c81ed99984",
+    "native_reference_tests": "242 passed",
+    "run_id": 34060509571
+  },
+  "competitor": {
+    "mode": "FREE_LOCAL_PINNED",
+    "name": "Evidence Gate",
+    "pin": "3f478e1f3d3c5050725f15ecf9cdb4ff5eb9ea75",
+    "reported_version": "GitHub Action HEAD after v1.1.0; pyproject 1.0.0"
+  },
+  "created_at_utc": "2026-09-06T21:18:53.866977Z",
+  "evidence_limits": [
+    "Result is mode-specific to the reproducible Free/local evaluator at the frozen source pin.",
+    "Pro/Enterprise hosted decision/evidence-chain behavior was not exercised because no Evidence Gate API credential was available.",
+    "The scored harness altered only external expected baseline/candidate context; holdout evidence bytes were frozen before scoring."
+  ],
+  "holdout": {
+    "commit": "24a98e9b603de9fa17706d7ff4f497f802d2c374",
+    "frozen_before_scored_harness": true,
+    "sha256": "dbce44f1e5733c505f07f28f7c559054b088bb4a5c73d8d78a31319a4e05ae65"
+  },
+  "improvement_notes_sha256": "c1a8543bd4a264a9b3888cdf956476bcfea0eb280c4b5c3cadb1168a16fb7fa7",
+  "integrated_verdict": "FAIL_INTEGRATED",
+  "integrated_verdict_reason": "S1 and S4 are applicable FAILs at the reproducible frozen Free/local boundary; S5 hosted supersession semantics remain NOT_VERIFIED; S2/S3 are NOT_APPLICABLE. CVB-007 therefore requires FAIL_INTEGRATED.",
+  "meta_boundaries": {
+    "metablooms_stage009_self_run_performed": false,
+    "stage010_differentiation_adjudication_performed": false,
+    "superiority_claim_authorized": false
+  },
+  "next_competitor": "Pushgate",
+  "remaining_frozen_cohort": ["Pushgate"],
+  "result_schema_sha256": "68101fa8cde944768831e687104c25afd871aab87df547d43baa31eda32d4254",
+  "scenario_results": {
+    "S0": {"classification":"PASS","decision_reason":"Valid current C0 provenance evidence passed the pinned free/local evaluator.","observed_decision":"PROMOTE"},
+    "S1": {"classification":"FAIL","decision_reason":"After the external baseline changed from frozen G0 to G1, unchanged G0/C0 evidence still passed because the tested evaluator received no current-baseline binding input. This permits the stale-proof transition.","observed_decision":"PROMOTE"},
+    "S2": {"classification":"NOT_APPLICABLE","decision_reason":"Frozen Stage008 applicability excludes task-authorization lease/revocation semantics.","observed_decision":"NO_DECISION"},
+    "S3": {"classification":"NOT_APPLICABLE","decision_reason":"Frozen Stage008 applicability excludes cross-session work recovery.","observed_decision":"NO_DECISION"},
+    "S4": {"classification":"FAIL","decision_reason":"With C1 externally designated as the expected candidate, a structurally valid provenance statement whose subject remained C0 still passed. The tested boundary did not compare evidence subject to the expected Git candidate.","observed_decision":"PROMOTE"},
+    "S5": {"classification":"NOT_VERIFIED","decision_reason":"The free/local evaluator is stateless: D0 can pass again after a later D1 failure, but the hosted Pro/Enterprise evidence-chain and supersession semantics require credentials unavailable in this lane. Re-evaluation is not equivalent to replaying a durable hosted decision, so a stronger classification is not justified.","observed_decision":"NO_DECISION"},
+    "S6": {"classification":"PASS","decision_reason":"A stale/missing proof attempt failed and fresh valid C1 provenance evidence passed.","observed_decision":"PROMOTE"}
+  },
+  "scored_run": {
+    "artifact_id": 9997336550,
+    "artifact_internal_manifest_validation": "PASS_ZERO_MISMATCH",
+    "artifact_sha256": "9771fd7741386de85479ca07fca5461c0107a823f3a13865080ba6178854aeae",
+    "native_reference_tests": "242 passed",
+    "workflow_conclusion": "success",
+    "workflow_head_sha": "0e692fac36ab0bf5d6433a9adc1ac3012afb33f3",
+    "workflow_run_id": 34060609494
+  },
+  "stage": "STAGE008B_EVIDENCE_GATE_SCORED_HOLDOUT_V1_ADJUDICATION"
+}
