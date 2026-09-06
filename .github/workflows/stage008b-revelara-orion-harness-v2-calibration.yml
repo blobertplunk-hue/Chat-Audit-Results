@@ -81,6 +81,27 @@ jobs:
           print(json.dumps(summary, indent=2))
           PY
 
+      - name: Regenerate portable checksum manifest
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          root=Path('benchmark-output/revelara-orion-v2')
+          lines=[]
+          for p in sorted(root.rglob('*')):
+              if not p.is_file() or p.name == 'SHA256SUMS.txt':
+                  continue
+              rel=p.relative_to(root)
+              if any(part.startswith('.') for part in rel.parts):
+                  continue
+              lines.append(f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {rel.as_posix()}")
+          (root/'SHA256SUMS.txt').write_text('\n'.join(lines)+'\n', encoding='utf-8')
+          print(f'portable checksum entries={len(lines)}')
+          PY
+
       - name: Upload raw calibration evidence
         if: always()
         uses: actions/upload-artifact@v4
