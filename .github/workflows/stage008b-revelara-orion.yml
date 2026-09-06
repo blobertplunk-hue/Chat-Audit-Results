@@ -64,6 +64,7 @@ jobs:
             /tmp/orion answer --key port --value 8080 >"$logdir/answer-port.stdout" 2>"$logdir/answer-port.stderr"; echo $? >"$logdir/answer-port.rc"
             /tmp/orion answer --key route --value /time >"$logdir/answer-route.stdout" 2>"$logdir/answer-route.stderr"; echo $? >"$logdir/answer-route.rc"
             /tmp/orion spec show >"$logdir/spec-preapprove.stdout" 2>"$logdir/spec-preapprove.stderr"; echo $? >"$logdir/spec-preapprove.rc"
+            /tmp/orion spec approve-assumptions >"$logdir/spec-approve-assumptions.stdout" 2>"$logdir/spec-approve-assumptions.stderr"; echo $? >"$logdir/spec-approve-assumptions.rc"
             /tmp/orion spec approve >"$logdir/spec-approve.stdout" 2>"$logdir/spec-approve.stderr"; echo $? >"$logdir/spec-approve.rc"
             /tmp/orion plan show --json >"$logdir/plan-initial.json" 2>"$logdir/plan-initial.stderr"; echo $? >"$logdir/plan-initial.rc"
           }
