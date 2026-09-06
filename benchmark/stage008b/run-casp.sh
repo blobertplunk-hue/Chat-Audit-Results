@@ -124,5 +124,11 @@ for sid in ("S0", "S1", "S3", "S6"):
 (out / "raw-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
 PY
 
-sha256sum "$OUT"/* > "$OUT/SHA256SUMS.txt"
+# Generate relocatable checksums: record basenames, not ephemeral runner paths.
+(
+  cd "$OUT"
+  find . -maxdepth 1 -type f ! -name 'SHA256SUMS.txt' -printf '%f\n' \
+    | sort \
+    | xargs -r sha256sum > SHA256SUMS.txt
+)
 cat "$OUT/raw-summary.json"
