@@ -1,0 +1,62 @@
+name: stage008b-ae-framework
+
+on:
+  push:
+    branches:
+      - benchmark/stage008b-ae-framework-20260905
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout benchmark harness
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node 22.16.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+
+      - name: Install pnpm 10.0.0
+        shell: bash
+        run: npm install --global pnpm@10.0.0
+
+      - name: Fetch exact ae-framework pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone -q https://github.com/itdojp/ae-framework.git /tmp/ae-framework-src
+          git -C /tmp/ae-framework-src checkout -q c5da6115638fdbfeebbc458b39fa6916db66afb0
+          test "$(git -C /tmp/ae-framework-src rev-parse HEAD)" = "c5da6115638fdbfeebbc458b39fa6916db66afb0"
+          node -e "const p=require('/tmp/ae-framework-src/package.json'); if(p.name!=='ae-framework'||p.version!=='1.0.0'||p.packageManager!=='pnpm@10.0.0') process.exit(1); console.log(p.name,p.version,p.packageManager,p.engines.node)"
+
+      - name: Install pinned dependencies and build assurance core
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/ae-framework-src
+          pnpm install --frozen-lockfile
+          pnpm --filter @ae-framework/core run build
+
+      - name: Execute frozen scored benchmark
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf benchmark-output/ae-framework
+          node benchmark/stage008b/ae-framework/run.mjs /tmp/ae-framework-src
+
+      - name: Upload raw benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage008b-ae-framework-results
+          path: benchmark-output/ae-framework
+          if-no-files-found: warn
+          retention-days: 30
+          compression-level: 6
