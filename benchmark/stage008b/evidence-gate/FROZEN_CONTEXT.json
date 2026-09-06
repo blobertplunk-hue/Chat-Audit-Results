@@ -1,0 +1,28 @@
+{
+  "schema": "metablooms.stage008b.evidence_gate.context.v1",
+  "benchmark_id": "CVB-007-20260905",
+  "benchmark_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+  "result_schema_sha256": "68101fa8cde944768831e687104c25afd871aab87df547d43baa31eda32d4254",
+  "competitor": {
+    "id": "evidence-gate",
+    "name": "Evidence Gate",
+    "repository": "evidence-gate/evidence-gate-action",
+    "pin": "3f478e1f3d3c5050725f15ecf9cdb4ff5eb9ea75",
+    "observed_version": "GitHub Action HEAD after v1.1.0",
+    "mode_under_test": "FREE_LOCAL_PINNED"
+  },
+  "frozen_applicability": {
+    "S0": "APPLICABLE",
+    "S1": "REQUIRES_PROBE",
+    "S2": "NOT_APPLICABLE",
+    "S3": "NOT_APPLICABLE",
+    "S4": "LIKELY_APPLICABLE",
+    "S5": "REQUIRES_PROBE",
+    "S6": "APPLICABLE"
+  },
+  "execution_limits": [
+    "Hosted Pro/Enterprise evaluator behavior requires credentials not present in this evidence lane.",
+    "Free local evaluator is reproducible and is the executable scored boundary for this run.",
+    "Hosted-only claims remain NOT_VERIFIED where the local boundary cannot establish them."
+  ]
+}
