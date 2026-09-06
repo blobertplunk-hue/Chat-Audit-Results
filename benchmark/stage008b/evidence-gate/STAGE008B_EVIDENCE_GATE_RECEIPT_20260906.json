@@ -1,0 +1,19 @@
+{
+  "schema": "metablooms.commercial_validation.stage_receipt.v1",
+  "stage": "STAGE008B_EVIDENCE_GATE_FORMAL_ADJUDICATION_COMPLETE",
+  "status": "COMPLETE",
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": "Evidence Gate",
+  "pin": "3f478e1f3d3c5050725f15ecf9cdb4ff5eb9ea75",
+  "mode": "FREE_LOCAL_PINNED",
+  "calibration": {"run_id":34060509571,"artifact_id":9997307357,"artifact_sha256":"01ea1a9dfea84f64c1d8ad127ad54ce56eb471d6d646fa0df0d248c81ed99984","native_reference_tests":"242 passed"},
+  "holdout": {"commit":"24a98e9b603de9fa17706d7ff4f497f802d2c374","sha256":"dbce44f1e5733c505f07f28f7c559054b088bb4a5c73d8d78a31319a4e05ae65","frozen_before_scored_harness":true},
+  "scored": {"workflow_run_id":34060609494,"workflow_head_sha":"0e692fac36ab0bf5d6433a9adc1ac3012afb33f3","workflow_conclusion":"success","artifact_id":9997336550,"artifact_sha256":"9771fd7741386de85479ca07fca5461c0107a823f3a13865080ba6178854aeae","artifact_internal_manifest_validation":"PASS_ZERO_MISMATCH","native_reference_tests":"242 passed"},
+  "scenario_results": {"S0":"PASS","S1":"FAIL","S2":"NOT_APPLICABLE","S3":"NOT_APPLICABLE","S4":"FAIL","S5":"NOT_VERIFIED","S6":"PASS"},
+  "integrated_verdict": "FAIL_INTEGRATED",
+  "result_json_sha256": "82f7a1225a58e5a6ed0b78831eb042436c27a2086bcb136a70be2f470d649cd0",
+  "result_md_sha256": "943842ac6119887fdff8c60da140d38114e0e3233d5fc448c30a5254f27f4cfd",
+  "metablooms_stage009_self_run_performed": false,
+  "stage010_differentiation_adjudication_performed": false,
+  "next_action": "Execute Pushgate Stage008B under frozen Stage008 documentation/interface authority."
+}
