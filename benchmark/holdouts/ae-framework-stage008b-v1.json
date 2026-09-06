@@ -1,0 +1,29 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": "ae-framework",
+  "competitor_pin": "c5da6115638fdbfeebbc458b39fa6916db66afb0",
+  "variant_id": "V1_AE_AUTHORITY_PROOF_AND_RECOVERY_001",
+  "perturbation_families": ["V1_REPOSITORY_CHANGE", "V3_AUTHORIZATION_CHANGE"],
+  "frozen_adapter_sha256": "f5e1272324b8f4b32d47b172c3b3ca24e832790109c213352e539780f75d2525",
+  "benchmark_markdown_sha256": "c741199270699f6696ab075fa5389b8bd6938d726a14bc43c9c892a6f5f2751e",
+  "benchmark_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+  "native_baseline_fixture": "fixtures/github-work-state/sample.github-work-state.json",
+  "native_positive_fixture": "fixtures/github-work-state/same-state-later.github-work-state.json",
+  "native_stale_head_fixture": "fixtures/github-work-state/stale-head.github-work-state.json",
+  "native_wrong_candidate_fixture": "fixtures/github-work-state/wrong-head-check.github-work-state.json",
+  "native_thread_change_fixture": "fixtures/github-work-state/same-count-different-thread-ids.github-work-state.json",
+  "authorization_revocation_mutation": {
+    "issueState": "CLOSED",
+    "issueStateReason": "COMPLETED"
+  },
+  "expected_head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "scored_scenarios": ["S0", "S1", "S2", "S3", "S4", "S5", "S6"],
+  "constraints": [
+    "Use only the pinned ae-framework source and its documented native scripts/contracts for scored behavior.",
+    "Harness-side file copies and retained outputs are evidence preservation only and do not count as ae-framework lineage capability.",
+    "The S2 lifecycle mutation must be re-digested using ae-framework's own computeSnapshotDigest implementation before comparison.",
+    "S3 must cross an operating-process boundary and use the documented handoff/authority-snapshot workflow before current-state comparison.",
+    "S5 may credit historical/current decision semantics only if ae-framework natively preserves and distinguishes them without harness-side archival being treated as product behavior.",
+    "Do not modify the Stage007 benchmark, the frozen Stage008 adapter, or normalized decision mapping after this commit."
+  ]
+}
