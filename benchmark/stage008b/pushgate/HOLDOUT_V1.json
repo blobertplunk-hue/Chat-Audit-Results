@@ -1,0 +1,38 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": {
+    "mode": "HOSTED_EXTERNAL",
+    "name": "Pushgate",
+    "pin_type": "documentation_snapshot",
+    "retrieved_at": "2026-09-05T20:26:00-05:00"
+  },
+  "derivation": {
+    "method": "deterministic_sha256_labels",
+    "seed_material": "benchmark_id|documentation_snapshot_time|PUSHGATE_HOLDOUT_V1",
+    "seed_sha256": "189b6890896d39a28a3b7151b6ce98d5efdf1ab01d8af47276590af811b408cc"
+  },
+  "freeze_contract": {
+    "calibration_is_not_holdout": true,
+    "no_adapter_tuning_after_freeze": true,
+    "no_fixture_mutation_after_freeze": true,
+    "runtime_outcomes_must_not_be_inferred_from_docs": true
+  },
+  "schema": "metablooms.stage008b.pushgate.holdout.v1",
+  "shared": {
+    "c0": "commit-da879b21895793ae",
+    "c1": "commit-dcd4088b4b20aba1",
+    "g0": "baseline-d87bab022e49",
+    "g1": "baseline-1df3ed8c780f",
+    "policy0": "policy-f5f6fecf45c6",
+    "policy1": "policy-c67b56d36ef7"
+  },
+  "variants": {
+    "S0": {"transition":"Push C0 with valid commit-bound evidence and current policy decision.","variant_id":"PG-H1-S0-60b6d97f"},
+    "S1": {"transition":"Advance current repository/ref baseline G0 to G1, then attempt stale G0 proof/push context.","variant_id":"PG-H1-S1-dfb68369"},
+    "S2": {"applicability":"NOT_APPLICABLE","variant_id":"PG-H1-S2-fe58c323"},
+    "S3": {"applicability":"NOT_APPLICABLE","variant_id":"PG-H1-S3-0beb2a55"},
+    "S4": {"transition":"Present C0-bound attestation/VSA for a proposed C1 update.","variant_id":"PG-H1-S4-cb939fdf"},
+    "S5": {"transition":"Produce/observe D0 allow then later D1 deny for same scope and attempt to rely on D0 for current push.","variant_id":"PG-H1-S5-98a6f85b"},
+    "S6": {"transition":"After stale/missing proof rejection, provide fresh C1 evidence/current VSA and retry.","variant_id":"PG-H1-S6-2d094046"}
+  }
+}
