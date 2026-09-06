@@ -1,0 +1,57 @@
+name: stage008b-csm-agentbook
+
+on:
+  push:
+    branches:
+      - benchmark/stage008b-csm-agentbook-20260905
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout harness
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node 24.15.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+
+      - name: Fetch exact CSM pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone -q https://github.com/NovasPlace/CSM.git /tmp/csm-src
+          git -C /tmp/csm-src checkout -q 4361d38de8672cffe06086e32b91ed41e73e100b
+          test "$(git -C /tmp/csm-src rev-parse HEAD)" = "4361d38de8672cffe06086e32b91ed41e73e100b"
+          node -e "const p=require('/tmp/csm-src/package.json'); if(p.name!=='opencode-cross-session-memory'||p.version!=='1.0.0') process.exit(1); console.log(p.name,p.version,p.engines.node)"
+
+      - name: Install and build pinned CSM
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/csm-src
+          npm ci --ignore-scripts=false
+          npm run build
+
+      - name: Execute frozen scored benchmark slice
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf benchmark-output/csm-agentbook .benchmark-work/csm-agentbook
+          node benchmark/stage008b/csm-agentbook/run.mjs /tmp/csm-src
+
+      - name: Upload raw benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage008b-csm-agentbook-results
+          path: benchmark-output/csm-agentbook
+          if-no-files-found: warn
+          retention-days: 30
