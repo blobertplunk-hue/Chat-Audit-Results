@@ -1,0 +1,103 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "benchmark_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+  "calibration": {
+    "artifact_id": 9996858180,
+    "artifact_sha256": "b2ca770006a1538a600333fda0586677527068162bb76aaffb340e5391ed9202",
+    "initial_failure_reason": "Substantive native tests and probes passed; SHA256SUMS was verified from the wrong working directory, so artifact upload was skipped.",
+    "initial_run_conclusion": "failure_packaging_only",
+    "initial_run_id": 34058945963,
+    "native_reference_tests": "34 passed, 1 warning",
+    "repaired_run_conclusion": "success",
+    "repaired_run_id": 34058999746,
+    "repaired_workflow_head_sha": "e444cdbb4b0f59b935f969c4c6f013aa1f0fcfea"
+  },
+  "competitor": {
+    "mode": "NATIVE",
+    "name": "Provenrail",
+    "pin": "b4b890699f859b2cbf607bb871daea0821679aaf",
+    "reported_version": "0.2.33"
+  },
+  "evidence_limits": [
+    "Provenrail is a narrow tool-call guard/evidence layer in this benchmark, not a repository-candidate promotion system; five scenarios remain frozen NOT_APPLICABLE.",
+    "S2 required an approximate authority-transition mapping because Provenrail does not expose an approved-request identity as a reusable action credential; session authorization is stored as rule-level oversight state.",
+    "S5 D1 was created and denied through Provenrail's native approval store after D0 had installed rule-level session oversight. The recorder does not automatically consume that later D1 because the rule is already allowed; this lack of linkage is the scored observation.",
+    "The scored artifact used an in-memory FastAPI sink and LocalAnchor; no external hosted sink/provider was required.",
+    "Native signed-chain integrity was exercised separately and detected reordering via seq_gap/broken_link/bad_session_hash, but evidence integrity does not itself enforce semantic supersession."
+  ],
+  "evidence_refs": {
+    "S2_raw_sha256": "13255b5dc0b0186f277d953fc98b5fd0139eee6d3bb53ac73e60245b6eda4079",
+    "S5_chain_verify_sha256": "55886631f08775f72f40f46508849a13bb2e0232b548d7af88725c44d0494cb2",
+    "S5_raw_sha256": "e5101ffddaf56778579d16b8c0bd642cffecc1b65fadbf0d6452d54a1adf2423"
+  },
+  "holdout": {
+    "commit": "e0b0191920913efb4c97c8232fa64801eb47851d",
+    "fixture_derivation_seed_sha256": "c4615962bde8fdfecc728e732a9cda7589c657687379a29ee4081fa5d62858de",
+    "frozen_before_scored_harness": true,
+    "sha256": "e888be10782334ed412652a7f9d56f4799c41da23735793bd2e304a8d62b31c2"
+  },
+  "integrated_verdict": "NOT_END_TO_END",
+  "integrated_verdict_reason": "Five of seven frozen scenarios (S0, S1, S3, S4, S6) are materially NOT_APPLICABLE at Provenrail's claimed native boundary, so CVB-007 classifies it as NOT_END_TO_END rather than as a full promotion-assurance system. Within its applicable/narrow authority layer, S2 is PARTIAL and S5 is FAIL: record integrity and approval auditability are strong, but current/superseded authorization state is not fully coupled to later authority transitions.",
+  "meta_boundaries": {
+    "metablooms_stage009_self_run_performed": false,
+    "stage010_differentiation_adjudication_performed": false,
+    "superiority_claim_authorized": false
+  },
+  "next_competitor": "Evidence Gate",
+  "provenance": {
+    "chat_url": "https://chatgpt.com/g/g-p-689c74a1b2c881919eef34000e072573-metabrain/c/6a9db5b7-18f0-83e9-ba2c-4c194f4f4471"
+  },
+  "remaining_frozen_cohort": [
+    "Evidence Gate",
+    "Pushgate"
+  ],
+  "result_schema_sha256": "68101fa8cde944768831e687104c25afd871aab87df547d43baa31eda32d4254",
+  "scenario_results": {
+    "S0": {
+      "classification": "NOT_APPLICABLE",
+      "decision_reason": "Frozen Stage008 applicability marks Provenrail S0 NOT_APPLICABLE because its native boundary guards/records agent actions but is not a final code-candidate promotion assurance system.",
+      "observed_decision": "NO_DECISION"
+    },
+    "S1": {
+      "classification": "NOT_APPLICABLE",
+      "decision_reason": "Frozen Stage008 applicability marks Provenrail S1 NOT_APPLICABLE because no repository-baseline requalification contract is established.",
+      "observed_decision": "NO_DECISION"
+    },
+    "S2": {
+      "classification": "PARTIAL",
+      "decision_reason": "A0 and A1 remained separately inspectable and the approval capability is single-use, but the scored native recorder represented current authority only as the approved rule in SessionState.oversight_rules. After A1 existed, the old A0 target was accepted without a new approval request. Because Provenrail exposes no native request-identity replay credential at that action boundary, this demonstrates incomplete current-vs-superseded binding rather than a fully attributable stale-token replay, so S2 is PARTIAL rather than PASS or a stronger FAIL.",
+      "observed_decision": "PROMOTE"
+    },
+    "S3": {
+      "classification": "NOT_APPLICABLE",
+      "decision_reason": "Frozen Stage008 applicability marks Provenrail S3 NOT_APPLICABLE because it is not a cross-session coding-work recovery system.",
+      "observed_decision": "NO_DECISION"
+    },
+    "S4": {
+      "classification": "NOT_APPLICABLE",
+      "decision_reason": "Frozen Stage008 applicability marks Provenrail S4 NOT_APPLICABLE because its independent verifier verifies recorded evidence integrity, not code-candidate qualification.",
+      "observed_decision": "NO_DECISION"
+    },
+    "S5": {
+      "classification": "FAIL",
+      "decision_reason": "D0 was approved, then a later same-scope native D1 request was denied. The recorder nevertheless accepted the same current action afterward without opening a new approval request because D0-derived rule-level oversight remained in SessionState. Native signed-chain verification correctly detected reordered history, but that integrity property did not propagate D1 into execution-side revocation. The required superseded-decision denial therefore failed.",
+      "observed_decision": "PROMOTE"
+    },
+    "S6": {
+      "classification": "NOT_APPLICABLE",
+      "decision_reason": "Frozen Stage008 applicability marks Provenrail S6 NOT_APPLICABLE because there is no native final code-promotion requalification contract.",
+      "observed_decision": "NO_DECISION"
+    }
+  },
+  "scored_run": {
+    "artifact_id": 9996912336,
+    "artifact_internal_manifest_validation": "PASS_ZERO_MISMATCH",
+    "artifact_sha256": "fb0e9cffe13ace25088dae30646881254b7454aa69cf8b65a7668aab1de327ec",
+    "github_workflow_url": "https://github.com/blobertplunk-hue/Chat-Audit-Results/actions/runs/34059179376",
+    "native_reference_tests": "34 passed, 1 warning",
+    "workflow_conclusion": "success",
+    "workflow_head_sha": "8fa26d9414f3ba629011d95ab18388f8cb0bf546",
+    "workflow_run_id": 34059179376
+  },
+  "stage": "STAGE008B_PROVENRAIL_SCORED_HOLDOUT_V1_ADJUDICATION"
+}
