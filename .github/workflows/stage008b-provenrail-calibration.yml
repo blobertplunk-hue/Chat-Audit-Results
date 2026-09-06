@@ -1,0 +1,139 @@
+name: Stage008B Provenrail calibration evidence
+
+on:
+  push:
+    branches:
+      - benchmark/stage008b-provenrail-20260906
+    paths:
+      - '.github/workflows/stage008b-provenrail-calibration.yml'
+      - 'benchmark/stage008b/provenrail/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout evidence branch
+        uses: actions/checkout@v4
+
+      - name: Checkout exact Provenrail pin
+        uses: actions/checkout@v4
+        with:
+          repository: pofky/provenrail
+          ref: b4b890699f859b2cbf607bb871daea0821679aaf
+          path: provenrail
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify pin and frozen context
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p raw/calibration
+          test "$(git -C provenrail rev-parse HEAD)" = "b4b890699f859b2cbf607bb871daea0821679aaf"
+          python - <<'PY' > raw/calibration/context_check.json
+          import json, pathlib
+          p=pathlib.Path('benchmark/stage008b/provenrail/FROZEN_CONTEXT.json')
+          d=json.loads(p.read_text())
+          assert d['benchmark_id']=='CVB-007-20260905'
+          assert d['competitor']['pin']=='b4b890699f859b2cbf607bb871daea0821679aaf'
+          print(json.dumps({'status':'PASS','benchmark_id':d['benchmark_id'],'pin':d['competitor']['pin'],'applicability':d['frozen_applicability']},indent=2))
+          PY
+          git -C provenrail show -s --format='%H%n%cI%n%s' HEAD > raw/calibration/pin_metadata.txt
+          cp provenrail/pyproject.toml raw/calibration/pinned_pyproject.toml
+          cp provenrail/src/provenrail/server/approvals.py raw/calibration/pinned_approvals.py
+          cp provenrail/src/provenrail/policy.py raw/calibration/pinned_policy.py
+          cp provenrail/src/provenrail/chain.py raw/calibration/pinned_chain.py
+
+      - name: Install pinned Provenrail
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e './provenrail[dev]'
+          python - <<'PY' > raw/calibration/runtime.txt
+          import importlib.metadata, platform
+          print('python='+platform.python_version())
+          print('provenrail='+importlib.metadata.version('provenrail'))
+          PY
+
+      - name: Run native targeted tests
+        shell: bash
+        run: |
+          set -o pipefail
+          (cd provenrail && pytest -q tests/test_approvals.py tests/test_chain.py tests/test_replay.py) 2>&1 | tee raw/calibration/native_targeted_tests.log
+          echo ${PIPESTATUS[0]} > raw/calibration/native_targeted_tests.rc
+          test "$(cat raw/calibration/native_targeted_tests.rc)" = "0"
+
+      - name: Run native semantic calibration probes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > raw/calibration/probe.py <<'PY'
+          import json, sqlite3
+          from datetime import UTC, datetime, timedelta
+          from provenrail.server.approvals import ApprovalStore, APPROVED, DENIED
+          from provenrail.policy import Policy, Rule, SessionState
+
+          db=sqlite3.connect(':memory:', check_same_thread=False)
+          db.row_factory=sqlite3.Row
+          store=ApprovalStore(db)
+          rule='deploy.production'
+          target='deploy_service(checkout,C0)'
+
+          d0=store.create('stream-holdout', rule=rule, event_type='tool_call', target=target, reason='D0 allow')
+          d0_decide=store.decide_by_token(d0['approve_token'], APPROVED, decided_by='calibration-operator')
+          d1=store.create('stream-holdout', rule=rule, event_type='tool_call', target=target, reason='D1 later deny')
+          d1_decide=store.decide_by_token(d1['deny_token'], DENIED, decided_by='calibration-operator')
+          d0_after=store.get(d0['request_id'])
+          d1_after=store.get(d1['request_id'])
+          d0_link_replay=store.decide_by_token(d0['approve_token'], APPROVED, decided_by='replay')
+
+          policy=Policy(rules=[Rule(id=rule, effect='require_oversight', tool='deploy_*')])
+          state=SessionState()
+          before=policy.decide('tool_call', {'tool':'deploy_service'}, state)
+          state.oversight_rules.add(rule)  # native representation installed after D0 oversight
+          after_d0=policy.decide('tool_call', {'tool':'deploy_service'}, state)
+          # A later same-scope denial exists in ApprovalStore; there is no native revocation bridge
+          # from that denial back into SessionState. Observe the policy decision without mutating state.
+          after_d1=policy.decide('tool_call', {'tool':'deploy_service'}, state)
+
+          exp=store.create('stream-holdout', rule=rule, event_type='tool_call', target='deploy_service(checkout,A0)', ttl_seconds=1)
+          later=datetime.now(UTC)+timedelta(seconds=5)
+          exp_status=store.get(exp['request_id'], now=later)
+          exp_decide=store.decide_by_token(exp['approve_token'], APPROVED, decided_by='late', now=later)
+
+          out={
+            'calibration_only': True,
+            'd0': {'request_id':d0['request_id'],'decision':d0_decide,'after_d1':d0_after},
+            'd1': {'request_id':d1['request_id'],'decision':d1_decide,'current':d1_after},
+            'd0_link_replay': d0_link_replay,
+            'policy_effects': {'before_d0':before.effect,'after_d0':after_d0.effect,'after_d1_same_state':after_d1.effect,'oversight_rules':sorted(state.oversight_rules)},
+            'pending_expiry': {'status_after_deadline':exp_status['status'],'late_decision':exp_decide},
+            'interpretation_boundary': 'Calibration distinguishes approval-link single-use/expiry from the lifetime of session authorization state; benchmark classification is not encoded here.'
+          }
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+          python raw/calibration/probe.py | tee raw/calibration/probe_observations.json
+
+      - name: Build evidence manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp benchmark/stage008b/provenrail/FROZEN_CONTEXT.json raw/calibration/FROZEN_CONTEXT.json
+          (cd raw/calibration && find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
+          sha256sum -c raw/calibration/SHA256SUMS.txt
+
+      - name: Upload calibration artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage008b-provenrail-calibration
+          path: raw/calibration
+          if-no-files-found: error
+          include-hidden-files: false
