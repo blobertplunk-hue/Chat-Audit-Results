@@ -1,0 +1,143 @@
+name: stage008b-revelara-orion-scored-v2
+
+on:
+  push:
+    branches:
+      - benchmark/stage008b-revelara-orion-scored-v2-20260906
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scored:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - name: Checkout scored harness
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prove holdout predates scored harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          HOLDOUT_COMMIT=99aafe257401013187877b2e3a70d5fd785015cb
+          git merge-base --is-ancestor "$HOLDOUT_COMMIT" HEAD
+          git show "$HOLDOUT_COMMIT:benchmark/stage008b/revelara-orion-v2/scored_holdout_v2.json" >/tmp/frozen-holdout.json
+          if git cat-file -e "$HOLDOUT_COMMIT:benchmark/stage008b/revelara-orion-v2/runner_scored_v2.py" 2>/dev/null; then
+            echo 'scored runner existed at holdout freeze' >&2; exit 2
+          fi
+          if git cat-file -e "$HOLDOUT_COMMIT:.github/workflows/stage008b-revelara-orion-scored-v2.yml" 2>/dev/null; then
+            echo 'scored workflow existed at holdout freeze' >&2; exit 2
+          fi
+          test "$(sha256sum /tmp/frozen-holdout.json | awk '{print $1}')" = "1a387c44aa596071121c5b197e1d2b5834ab57e57c50035593be2127ff8686ca"
+
+      - name: Unit-test scenario isolation and scored wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd benchmark/stage008b/revelara-orion-v2
+          python3 -m unittest -v test_runner_v2.py test_runner_scored_v2.py
+
+      - name: Set up Go 1.26.5
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+          cache: false
+
+      - name: Build exact Orion pin and minimal native adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone -q https://github.com/revelara-ai/orion.git /tmp/orion-src
+          git -C /tmp/orion-src checkout -q 9b9e9567305122d439727989b3633abc05183bce
+          test "$(git -C /tmp/orion-src rev-parse HEAD)" = "9b9e9567305122d439727989b3633abc05183bce"
+          mkdir -p /tmp/orion-src/cmd/stage008bprobev2
+          cp benchmark/stage008b/revelara-orion-v2/probe_main.go /tmp/orion-src/cmd/stage008bprobev2/main.go
+          cd /tmp/orion-src
+          go build -o /tmp/orion ./cmd/orion
+          go build -o /tmp/orion-probe-v2 ./cmd/stage008bprobev2
+          /tmp/orion --version
+
+      - name: Execute all seven scored holdout scenarios
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd benchmark/stage008b/revelara-orion-v2
+          python3 runner_scored_v2.py \
+            --orion /tmp/orion \
+            --probe /tmp/orion-probe-v2 \
+            --fixture scored_holdout_v2.json \
+            --out "$GITHUB_WORKSPACE/benchmark-output/revelara-orion-v2-scored"
+
+      - name: Validate seven raw envelopes and no in-harness scoring
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('benchmark-output/revelara-orion-v2-scored')
+          summary=json.load(open(root/'summary.json'))
+          assert summary['scenario_count'] == 7, summary
+          assert summary['all_scenarios_emitted'] is True, summary
+          assert summary['score_performed'] is False, summary
+          assert summary['mode'] == 'SCORED_HOLDOUT_EXECUTION', summary
+          assert summary['harness_error_count'] == 0, summary
+          for i in range(7):
+              env=json.load(open(root/f'S{i}'/'scenario-envelope.json'))
+              assert env['scenario_id'] == f'S{i}', env
+              assert env['benchmark_score'] is None, env
+              assert env['harness_status'] == 'COMPLETE', env
+          s4=json.load(open(root/'S4'/'scenario-envelope.json'))
+          cb=s4['observations']['candidate_binding']
+          assert cb['candidates_distinct'] is True, cb
+          assert cb['c0_hash'] != cb['c1_hash'], cb
+          assert cb['c1_memo_present_without_fresh_proof'] is False, cb
+          print(json.dumps(summary, indent=2))
+          PY
+
+      - name: Record scored-run metadata and checksums
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          root=Path('benchmark-output/revelara-orion-v2-scored')
+          meta={
+            'schema':'metablooms.stage008b.orion_scored_run_metadata.v2',
+            'benchmark_id':'CVB-007-20260905',
+            'competitor':'Revelara Orion',
+            'competitor_pin':'9b9e9567305122d439727989b3633abc05183bce',
+            'holdout_commit':'99aafe257401013187877b2e3a70d5fd785015cb',
+            'holdout_sha256':'1a387c44aa596071121c5b197e1d2b5834ab57e57c50035593be2127ff8686ca',
+            'harness_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+            'calibration_run_id':34034332336,
+            'calibration_artifact_sha256':'ca711c685d47624044d3fce2bacb5661397951e43518475eaeec27a9089fd47c',
+            'score_performed':False,
+            'note':'Raw scored execution only; formal CVB-007 adjudication occurs after artifact readback.'
+          }
+          (root/'meta').mkdir(exist_ok=True)
+          (root/'meta'/'run-metadata.json').write_text(json.dumps(meta,indent=2,sort_keys=True)+'\n')
+          lines=[]
+          for p in sorted(root.rglob('*')):
+              if not p.is_file() or p.name=='SHA256SUMS.txt': continue
+              lines.append(f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.relative_to(root).as_posix()}")
+          (root/'SHA256SUMS.txt').write_text('\n'.join(lines)+'\n')
+          print(f'portable checksum entries={len(lines)}')
+          PY
+
+      - name: Upload raw scored evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage008b-revelara-orion-scored-v2
+          path: benchmark-output/revelara-orion-v2-scored
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
