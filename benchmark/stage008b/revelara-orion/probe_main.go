@@ -35,6 +35,7 @@ func seedProof(dataDir, out, qToken, cToken string) {
   _, task, err := currentTask(ctx, st, c); die(err)
   candDir := filepath.Join(dataDir, "stage008b-seed-candidate")
   _ = os.RemoveAll(candDir)
+  die(os.MkdirAll(candDir, 0755))
   art, err := sandbox.GenerateTimeServiceFixture(candDir, sandbox.GenSpec{
     Module: "orion-generated/service", Route: es.ResponseContract.Route, Port: es.ResponseContract.Port,
     Format: es.ResponseContract.Format(), TimeZone: es.ResponseContract.TimeZone, Cases: es.ResponseContract.Cases,
@@ -59,7 +60,7 @@ func seedProof(dataDir, out, qToken, cToken string) {
 func mismatch(dataDir, out, cToken string) {
   ctx := context.Background(); st, err := contextstore.Open(dataDir); die(err); defer st.Close(); c := orchestrator.NewWithStore(st)
   es, err := c.RecallSpec(ctx); die(err)
-  candDir := filepath.Join(dataDir, "stage008b-mismatch-candidate"); _ = os.RemoveAll(candDir)
+  candDir := filepath.Join(dataDir, "stage008b-mismatch-candidate"); _ = os.RemoveAll(candDir); die(os.MkdirAll(candDir, 0755))
   art, err := sandbox.GenerateTimeServiceFixture(candDir, sandbox.GenSpec{Module:"orion-generated/service-c1", Route:es.ResponseContract.Route, Port:es.ResponseContract.Port, Format:es.ResponseContract.Format(), TimeZone:es.ResponseContract.TimeZone, Cases:es.ResponseContract.Cases}); die(err)
   _, hit, err := st.ProofMemoGet(ctx, es.Hash, art.ContentHash); die(err)
   writeJSON(out, map[string]any{"spec_hash":es.Hash,"candidate_token":cToken,"candidate_hash":art.ContentHash,"memo_hit":hit,"process_pid":os.Getpid()})
