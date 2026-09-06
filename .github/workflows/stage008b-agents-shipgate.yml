@@ -32,14 +32,19 @@ jobs:
           git -C /tmp/agents-shipgate-src checkout -q c41571f2d11eb5864b487f0ace40a84dfa8f385b
           test "$(git -C /tmp/agents-shipgate-src rev-parse HEAD)" = "c41571f2d11eb5864b487f0ace40a84dfa8f385b"
 
-      - name: Install pinned Agents Shipgate outside authorized workspace
+      - name: Install pinned Agents Shipgate into host-protected runtime
         shell: bash
         run: |
           set -euo pipefail
-          python -m venv /tmp/agents-shipgate-venv
-          /tmp/agents-shipgate-venv/bin/python -m pip install --disable-pip-version-check -q --upgrade pip
-          /tmp/agents-shipgate-venv/bin/python -m pip install --disable-pip-version-check -q /tmp/agents-shipgate-src
-          /tmp/agents-shipgate-venv/bin/agents-shipgate --version
+          sudo rm -rf /opt/agents-shipgate-stage008b
+          sudo python -m venv --copies /opt/agents-shipgate-stage008b
+          sudo /opt/agents-shipgate-stage008b/bin/python -m pip install --disable-pip-version-check -q --upgrade pip
+          sudo /opt/agents-shipgate-stage008b/bin/python -m pip install --disable-pip-version-check -q /tmp/agents-shipgate-src
+          sudo chown -R root:root /opt/agents-shipgate-stage008b
+          sudo chmod -R go-w /opt/agents-shipgate-stage008b
+          test ! -L /opt/agents-shipgate-stage008b/bin/python
+          test ! -w /opt/agents-shipgate-stage008b/bin/python || test "$(stat -c '%U' /opt/agents-shipgate-stage008b/bin/python)" = root
+          /opt/agents-shipgate-stage008b/bin/agents-shipgate --version
 
       - name: Execute frozen scored benchmark slice
         shell: bash
@@ -49,7 +54,7 @@ jobs:
           sed '/^  instructions: \[\]$/d' benchmark/stage008b/agents-shipgate/run.sh \
             | sed "s|^POLICY=.*|POLICY=\"$ACCOUNT_HOME/.config/agents-shipgate/human-authorization-trust-policy.json\"|" \
             > /tmp/run-shipgate-fixed.sh
-          bash /tmp/run-shipgate-fixed.sh /tmp/agents-shipgate-src /tmp/agents-shipgate-venv
+          bash /tmp/run-shipgate-fixed.sh /tmp/agents-shipgate-src /opt/agents-shipgate-stage008b
 
       - name: Upload raw benchmark evidence
         if: always()
