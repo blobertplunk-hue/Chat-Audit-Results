@@ -1,0 +1,65 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "benchmark_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+  "calibration": {
+    "first_attempt_note": "Initial calibration generated Python bytecode and tripped the no-derived-bytecode test; bytecode was removed and calibration reran unchanged with PYTHONDONTWRITEBYTECODE/`-B`, yielding 31/31 pass.",
+    "native_reference_tests": "31 passed",
+    "native_tests_sha256": "a2e0ed943d6e1d07705b9bb29e0f6780f030c7b414d6e214eaca35a75c9a6f39"
+  },
+  "created_at_utc": "2026-09-06T21:49:42.032810Z",
+  "evidence_limits": [
+    "Stage009 is COMPOSITE: it composes CCCC durable session authority, candidate/evidence binding, transactional host mutation authority, deny-default capability brokerage, and CAS authority lineage through benchmark glue.",
+    "No single normal-path production promotion controller wiring all Stage006 required inputs/outputs was demonstrated by this run.",
+    "S5 used deterministic isolated CAS receipt/readback fixtures rather than a live provider mutation; the scored stale-generation denial itself was produced by the native CAS publisher prepare logic.",
+    "The system snapshot binds the canonical baseline archive SHA and exact tested component hashes; it is not a complete live-root tree digest.",
+    "Two scored attempts were interrupted by the tool execution window; their partial evidence and exact-byte retry receipts are preserved, and the successful third attempt used unchanged holdout/harness bytes."
+  ],
+  "holdout": {
+    "fixture_derivation_seed_sha256": "6b41ae3f3bea95c77b8da9a4a6f8ab1aab4187d8bc745abaa2189b8263996ad1",
+    "frozen_before_scored_harness": true,
+    "remote_freeze_commit": "eee5a0cc69cf54883965aed72234f9afd4c6b6ff",
+    "sha256": "c1515a58364f3d1d46b93fd778486a623f2df14d35027b975abd09355401f624"
+  },
+  "integrated_verdict": "PASS_INTEGRATED",
+  "integrated_verdict_reason": "All seven CVB-007 scenarios passed in the scored COMPOSITE MetaBlooms configuration, including positive controls S0/S6 and stale/superseded/mismatched denial scenarios S1-S5. This is a composite result and must not be presented as native single-entrypoint end-to-end proof.",
+  "meta_boundaries": {
+    "native_end_to_end_claim_authorized": false,
+    "stage010_differentiation_adjudication_performed": false,
+    "superiority_claim_authorized": false
+  },
+  "next_action": "Run Stage010 comparative differentiation adjudication using frozen Stage008 competitor results and this Stage009 COMPOSITE result. Do not overclaim native single-entrypoint integration.",
+  "result_schema_sha256": "68101fa8cde944768831e687104c25afd871aab87df547d43baa31eda32d4254",
+  "scenario_results": {
+    "S0": {"classification": "PASS", "decision_reason": "Current C0 proof passed the candidate/evidence binding gate and the current-authority transactional host adapter committed C0 over current R0 using current G0/A0 authority.", "observed_decision": "PROMOTE", "result_record_sha256": "992daa23299d28c7df8b884b2c6d3e445e4eb14cc48b9e9bdb92e4bb07b49481"},
+    "S1": {"classification": "PASS", "decision_reason": "Historic C0 proof remained inspectable and still passed candidate binding, but after the trusted baseline changed to R1 the current transactional adapter rejected the old R0 before-digest with DENY_STALE_BEFORE_DIGEST.", "observed_decision": "DENY_PROMOTION", "result_record_sha256": "a7da0149947c746fc030a6cd5723b0eb2692dec9c6259fd515f0b50255885a9d"},
+    "S2": {"classification": "PASS", "decision_reason": "A0 remained in the durable session event chain, was closed/superseded by A1 with a new fence token, and the current adapter rejected replay of A0 with DENY_STALE_OR_REVOKED_FENCE.", "observed_decision": "DENY_PROMOTION", "result_record_sha256": "49679ab2c032832b51d1b6ac72b3733f1e4c25df9f083fedefc978a4eb97119c"},
+    "S3": {"classification": "PASS", "decision_reason": "A fresh Python process rebuilt durable session state from the CCCC event log after R/G/A changed and rejected the prior checkpoint authority with DENY_STALE_AUTHORITY_EPOCH; no transient chat memory was used by the recovery probe.", "observed_decision": "DENY_PROMOTION", "result_record_sha256": "95c67abad2193703918d546cc1b4c80db0de191d85d4792923a6cde2799507bd"},
+    "S4": {"classification": "PASS", "decision_reason": "C1 differed immutably from C0 and the native candidate qualification binding gate rejected C0 qualification/verifier evidence when presented for C1; no promotion effect was attempted after preflight denial.", "observed_decision": "DENY_PROMOTION", "result_record_sha256": "9d15e196a1891fe7300cc73deb7bd8f45dde3d13e32438a909fd1aa7718eabdd"},
+    "S5": {"classification": "PASS", "decision_reason": "D0 and D1 remained retained as separate generation-bound CAS authority records; after D1 became current, attempting to reuse D0 was rejected as BLOCK_NON_MONOTONIC_GENERATION.", "observed_decision": "DENY_PROMOTION", "result_record_sha256": "aae4cba92e909a87310d26fb9c84d9d13c8e3bc5388f910610e0e4ff7bf92ac2"},
+    "S6": {"classification": "PASS", "decision_reason": "The stale A0/G0 attempt was denied, then fresh A1/G1 plus candidate-specific Q1/independent-verifier evidence for C1 passed and the current transactional adapter committed C1 while older records remained intact.", "observed_decision": "PROMOTE", "result_record_sha256": "159e4cb49fd5bfc56fdeb89f9373e415ec2b52e0bfaf0a03685693ef83eb55a9"}
+  },
+  "scored_run": {
+    "artifact_internal_manifest_validation": "PASS_ZERO_MISMATCH",
+    "execution": "local_isolated_native_components",
+    "harness_sha256": "e18d3787ad2f6b2efaf7f9970f033177d4f928a5f621bd605ee71dc29947bbf7",
+    "internal_manifest_sha256": "52e1e6abe891453f43fb02441905d0a3522de729750ea1ca0b1ade938de0a60e",
+    "interrupted_attempt_receipts": [{"attempt": 1, "sha256": "b43ab3036f374f273c1ea6ba7bb941bf5cb1df0c94f6045e38bb682a59501261"}, {"attempt": 2, "sha256": "783714cfd1ce8f6954b85817f09b6d4190a487702559cc0fda571b2711bb0c11"}],
+    "raw_observations_sha256": "12c731698dab76f5bb31be2aa04544671cb45329fa0c7febe2b18d23bdaa4de3",
+    "recovery_probe_sha256": "920e769bec18495b3f284ad150b74d5e17498d2019e9fe841062d99d9acd338f",
+    "retry_invariant": "Attempts 2 and 3 used identical holdout and harness bytes; no adapter or fixture tuning occurred after holdout freeze.",
+    "successful_attempt": 3
+  },
+  "stage": "STAGE009_METABLOOMS_SELF_RUN_FROZEN_HOLDOUT_V1_ADJUDICATION",
+  "system": {
+    "canonical_baseline_archive_sha256": "30ca88ab3f9d49a6a06c5913efced3dd168e620e3d02f437eee6f85433d570e0",
+    "components": {
+      "tools/metablooms/candidate_qualification_binding_gate_v1.py": "3b212fbafdd19cac1859e0c046c443017e5deb575d74f6d5dd105beb989acb08",
+      "tools/metablooms/cccc_session_event_registry_v1.py": "4542771508c3d25d5dd827f1e6d5aa5cc6a99bc47dcb5765fba7e1fb95db6205",
+      "tools/metablooms/deny_default_capability_broker_v1.py": "8c2a86dd026fae08f073a88023eb678ec68958f5ad56d57522ce8a11811ade6f",
+      "tools/metablooms/github_authority_cas_publisher_v1.py": "8790ffdebf101818bd17889272a577d411b14774460a286428f376a3082080cd",
+      "tools/metablooms/transactional_host_adapter_v1.py": "8b91e56c3ae87839f59957efb094a44de66a5cf796ab3aa0d0b3df51e7bf09c9"
+    },
+    "mode": "COMPOSITE",
+    "name": "MetaBlooms"
+  }
+}
