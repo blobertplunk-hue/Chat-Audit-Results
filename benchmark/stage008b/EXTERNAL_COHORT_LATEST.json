@@ -4,7 +4,7 @@
   "cohort_handoff_sha256": "59d9af27a619d64b28c6064771b75dfff6622eb137849558045d5d7f7eb35aac",
   "cohort_receipt_path": "benchmark/stage008b/STAGE008B_EXTERNAL_COMPETITOR_COHORT_RECEIPT_20260906.json",
   "cohort_receipt_sha256": "98f432cc8b8a11dada05411c286ee78387d475ad0ae1936bb82182f9133cbcea",
-  "continuation_state_sha256": "d14d5a4a90c3c8e2eeaf59bebd5ea00c0a5bfe77e73ae2379460bc25997457b4",
+  "continuation_state_sha256": "659a648e3a2ce45c67b1fe76e1eeeef38511db1368270d6062cc04bb0e125bc2",
   "evidence_gate": {
     "integrated_verdict": "FAIL_INTEGRATED",
     "latest_path": "benchmark/stage008b/evidence-gate/LATEST.json",
