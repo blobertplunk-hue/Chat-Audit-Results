@@ -1,0 +1,306 @@
+name: Stage008B Provenrail scored holdout v1
+
+on:
+  push:
+    branches:
+      - benchmark/stage008b-provenrail-scored-v1-20260906
+    paths:
+      - '.github/workflows/stage008b-provenrail-scored-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scored:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout scored evidence branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Verify frozen holdout parent and bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "e0b0191920913efb4c97c8232fa64801eb47851d"
+          echo "e888be10782334ed412652a7f9d56f4799c41da23735793bd2e304a8d62b31c2  benchmark/stage008b/provenrail/HOLDOUT_V1.json" | sha256sum -c -
+          python - <<'PY'
+          import json
+          d=json.load(open('benchmark/stage008b/provenrail/HOLDOUT_V1.json'))
+          assert d['freeze_contract']['no_fixture_mutation_after_freeze'] is True
+          assert d['freeze_contract']['scored_harness_must_read_this_fixture'] is True
+          assert d['competitor']['pin']=='b4b890699f859b2cbf607bb871daea0821679aaf'
+          PY
+
+      - name: Checkout exact Provenrail pin
+        uses: actions/checkout@v4
+        with:
+          repository: pofky/provenrail
+          ref: b4b890699f859b2cbf607bb871daea0821679aaf
+          path: provenrail
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pinned Provenrail
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p raw/scored/raw/scenarios
+          test "$(git -C provenrail rev-parse HEAD)" = "b4b890699f859b2cbf607bb871daea0821679aaf"
+          python -m pip install --upgrade pip
+          python -m pip install -e './provenrail[dev]'
+          {
+            echo "pin=$(git -C provenrail rev-parse HEAD)"
+            echo "commit_time=$(git -C provenrail show -s --format=%cI HEAD)"
+            echo "subject=$(git -C provenrail show -s --format=%s HEAD)"
+            python - <<'PY'
+          import importlib.metadata, platform
+          print('python='+platform.python_version())
+          print('provenrail='+importlib.metadata.version('provenrail'))
+          PY
+          } > raw/scored/runtime_pin.txt
+          cp benchmark/stage008b/provenrail/HOLDOUT_V1.json raw/scored/HOLDOUT_V1.json
+          cp benchmark/stage008b/provenrail/FROZEN_CONTEXT.json raw/scored/FROZEN_CONTEXT.json
+          cp provenrail/src/provenrail/server/approvals.py raw/scored/pinned_approvals.py
+          cp provenrail/src/provenrail/sdk.py raw/scored/pinned_sdk.py
+          cp provenrail/src/provenrail/policy.py raw/scored/pinned_policy.py
+          cp provenrail/src/provenrail/chain.py raw/scored/pinned_chain.py
+
+      - name: Run pinned native reference tests
+        shell: bash
+        run: |
+          set -o pipefail
+          (cd provenrail && pytest -q tests/test_approvals.py tests/test_chain.py tests/test_replay.py) 2>&1 | tee raw/scored/native_reference_tests.log
+          echo ${PIPESTATUS[0]} > raw/scored/native_reference_tests.rc
+          test "$(cat raw/scored/native_reference_tests.rc)" = "0"
+
+      - name: Execute frozen scored holdout
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > raw/scored/scored_probe.py <<'PY'
+          import copy
+          import json
+          import pathlib
+          import threading
+          import time
+
+          from fastapi.testclient import TestClient
+          from provenrail.anchor import LocalAnchor
+          from provenrail.chain import Chain, HUMAN_OVERSIGHT, verify_client_chain
+          from provenrail.ingest_client import provision_stream
+          from provenrail.keys import SigningKey
+          from provenrail.policy import Policy, Rule, PolicyViolation
+          from provenrail.sdk import FlightRecorder
+          from provenrail.server.app import create_app
+
+          root=pathlib.Path('raw/scored')
+          outdir=root/'raw'/'scenarios'
+          outdir.mkdir(parents=True,exist_ok=True)
+          hold=json.load(open('benchmark/stage008b/provenrail/HOLDOUT_V1.json'))
+          shared=hold['shared']
+
+          def api_path(url):
+              return url.replace('http://testserver','')
+
+          def new_env(tag):
+              client=TestClient(create_app(':memory:', anchor=LocalAnchor(), require_account=False))
+              prov=provision_stream('http://t', http=client)
+              policy=Policy(rules=[Rule(id=shared['rule_id'], effect='require_oversight', tool=shared['tool'])])
+              fr=FlightRecorder('http://t', prov['write_token'], prov['stream_id'], http=client,
+                                policy=policy, enforce=True, approval_timeout=5, approval_poll=0.02)
+              created=[]
+              original=fr.client.request_approval
+              def capture(body):
+                  r=original(body)
+                  created.append({'body':body,'response':r})
+                  return r
+              fr.client.request_approval=capture
+              return client,prov,fr,created
+
+          def approve_first_recorder_request(client, created):
+              def worker():
+                  for _ in range(1000):
+                      if created:
+                          url=created[0]['response']['approve_url']
+                          client.get(api_path(url))
+                          client.post(api_path(url))
+                          return
+                      time.sleep(0.005)
+                  raise RuntimeError('recorder approval request not observed')
+              t=threading.Thread(target=worker,daemon=True)
+              t.start()
+              return t
+
+          def create_manual_decision(client, prov, *, target, label, decision):
+              r=client.post('/v1/approvals', json={
+                  'stream_id':prov['stream_id'],
+                  'rule':shared['rule_id'],
+                  'event_type':'tool_call',
+                  'target':target,
+                  'reason':label,
+              }, headers={'Authorization':f"Bearer {prov['write_token']}"})
+              assert r.status_code in (200,201)
+              body=r.json()
+              url=body['approve_url'] if decision=='approved' else body['deny_url']
+              client.get(api_path(url))
+              post=client.post(api_path(url))
+              assert post.status_code==200
+              status=client.get(f"/v1/approvals/{body['request_id']}",
+                                headers={'Authorization':f"Bearer {prov['write_token']}"})
+              assert status.status_code==200
+              return {'created':body,'status':status.json()}
+
+          def export_stream(client, prov):
+              r=client.get(f"/v1/streams/{prov['stream_id']}/export",
+                           headers={'Authorization':f"Bearer {prov['read_token']}"})
+              assert r.status_code==200
+              return r.json()
+
+          # S2 — A0 approved, A1 later approved, then old A0 target is attempted again.
+          v=hold['variants']['S2']
+          client,prov,fr,created=new_env('S2')
+          t=approve_first_recorder_request(client,created)
+          with fr.session({'agent':'provenrail-holdout','scenario':'S2','variant_id':v['variant_id']}):
+              initial_allowed=True
+              try:
+                  fr.record_tool_call(shared['tool'], {'target':shared['target_c0'],'authority':v['a0_label']}, {'ok':True})
+              except PolicyViolation:
+                  initial_allowed=False
+              t.join(timeout=5)
+              assert initial_allowed is True
+              assert created and created[0]['response'].get('request_id')
+              assert shared['rule_id'] in fr._session_state.oversight_rules
+              a0_request_id=created[0]['response']['request_id']
+              a0_status=client.get(f"/v1/approvals/{a0_request_id}",
+                                   headers={'Authorization':f"Bearer {prov['write_token']}"}).json()
+              assert a0_status['status']=='approved'
+
+              a1=create_manual_decision(client,prov,target=shared['target_c1'],label=v['a1_label'],decision='approved')
+              before_requests=len(created)
+              stale_a0_allowed=True
+              stale_error=''
+              try:
+                  fr.record_tool_call(shared['tool'], {'target':shared['target_c0'],'authority':v['a0_label']}, {'ok':True})
+              except PolicyViolation as e:
+                  stale_a0_allowed=False
+                  stale_error=str(e)
+              after_requests=len(created)
+              state_rules=sorted(fr._session_state.oversight_rules)
+          bundle=export_stream(client,prov)
+          s2={
+              'scenario_id':'S2','variant_id':v['variant_id'],'holdout_read':True,
+              'a0':{'request_id':a0_request_id,'status':a0_status},
+              'a1':a1,
+              'stale_a0_attempt':{
+                  'target':shared['target_c0'],'allowed':stale_a0_allowed,'error':stale_error,
+                  'recorder_approval_requests_before':before_requests,
+                  'recorder_approval_requests_after':after_requests,
+                  'session_oversight_rules':state_rules,
+              },
+              'native_authority_representation':{
+                  'session_state_field':'oversight_rules','contains_rule_id':shared['rule_id'] in state_rules,
+                  'contains_approval_request_identity':False,
+              },
+              'stream_record_count':len(bundle.get('records',[])),
+              'notes':'No benchmark expected outcome is asserted by this harness; the observation is adjudicated later.'
+          }
+          (outdir/'S2.json').write_text(json.dumps(s2,indent=2,sort_keys=True)+'\n')
+          (root/'S2_stream_export.json').write_text(json.dumps(bundle,indent=2,sort_keys=True)+'\n')
+
+          # S5 — D0 approved, D1 later denied for the same target, then same target attempted again.
+          v=hold['variants']['S5']
+          client,prov,fr,created=new_env('S5')
+          t=approve_first_recorder_request(client,created)
+          with fr.session({'agent':'provenrail-holdout','scenario':'S5','variant_id':v['variant_id']}):
+              first_allowed=True
+              try:
+                  fr.record_tool_call(shared['tool'], {'target':shared['target_c0'],'decision':v['d0_label']}, {'ok':True})
+              except PolicyViolation:
+                  first_allowed=False
+              t.join(timeout=5)
+              assert first_allowed is True
+              assert created and created[0]['response'].get('request_id')
+              assert shared['rule_id'] in fr._session_state.oversight_rules
+              d0_request_id=created[0]['response']['request_id']
+              d0_status=client.get(f"/v1/approvals/{d0_request_id}",
+                                   headers={'Authorization':f"Bearer {prov['write_token']}"}).json()
+              assert d0_status['status']=='approved'
+
+              d1=create_manual_decision(client,prov,target=shared['target_c0'],label=v['d1_label'],decision='denied')
+              assert d1['status']['status']=='denied'
+              before_requests=len(created)
+              after_d1_allowed=True
+              after_d1_error=''
+              try:
+                  fr.record_tool_call(shared['tool'], {'target':shared['target_c0'],'decision':v['d0_label']}, {'ok':True})
+              except PolicyViolation as e:
+                  after_d1_allowed=False
+                  after_d1_error=str(e)
+              after_requests=len(created)
+              state_rules=sorted(fr._session_state.oversight_rules)
+          bundle5=export_stream(client,prov)
+
+          # Supporting native signed-chain integrity probe: clean ordering vs record reorder.
+          chain=Chain(stream_id=shared['stream_id'],key=SigningKey.generate())
+          signed=[chain.start({'scenario':'S5','variant_id':v['variant_id']})]
+          signed.append(chain.append(HUMAN_OVERSIGHT, {'label':v['d0_label'],'rule':shared['rule_id'],'target':shared['target_c0'],'decision':'approved'}))
+          signed.append(chain.append(HUMAN_OVERSIGHT, {'label':v['d1_label'],'rule':shared['rule_id'],'target':shared['target_c0'],'decision':'denied'}))
+          signed.append(chain.seal())
+          clean_issues=[{'code':i.code,'message':str(i)} for i in verify_client_chain(signed)]
+          reordered=copy.deepcopy(signed)
+          reordered[1],reordered[2]=reordered[2],reordered[1]
+          reorder_issues=[{'code':i.code,'message':str(i)} for i in verify_client_chain(reordered)]
+          (root/'S5_signed_chain_clean.json').write_text(json.dumps(signed,indent=2,sort_keys=True)+'\n')
+          (root/'S5_signed_chain_reordered.json').write_text(json.dumps(reordered,indent=2,sort_keys=True)+'\n')
+
+          s5={
+              'scenario_id':'S5','variant_id':v['variant_id'],'holdout_read':True,
+              'd0':{'request_id':d0_request_id,'status':d0_status},
+              'd1':d1,
+              'post_d1_current_attempt':{
+                  'target':shared['target_c0'],'allowed':after_d1_allowed,'error':after_d1_error,
+                  'recorder_approval_requests_before':before_requests,
+                  'recorder_approval_requests_after':after_requests,
+                  'session_oversight_rules':state_rules,
+              },
+              'signed_chain_support':{
+                  'clean_issue_codes':[x['code'] for x in clean_issues],
+                  'reordered_issue_codes':[x['code'] for x in reorder_issues],
+                  'clean_record_count':len(signed),
+              },
+              'stream_record_count':len(bundle5.get('records',[])),
+              'notes':'D1 is a native approval-store decision. The recorder does not automatically consume it after D0 has installed rule-level oversight state; that absence of automatic linkage is itself preserved as an observation. No benchmark expected outcome is asserted here.'
+          }
+          (outdir/'S5.json').write_text(json.dumps(s5,indent=2,sort_keys=True)+'\n')
+          (root/'S5_stream_export.json').write_text(json.dumps(bundle5,indent=2,sort_keys=True)+'\n')
+          (root/'S5_chain_verify.json').write_text(json.dumps({'clean_issues':clean_issues,'reordered_issues':reorder_issues},indent=2,sort_keys=True)+'\n')
+
+          # Frozen N/A rows are emitted without attempting to expand scope.
+          for sid in ('S0','S1','S3','S4','S6'):
+              vv=hold['variants'][sid]
+              (outdir/f'{sid}.json').write_text(json.dumps({
+                  'scenario_id':sid,'variant_id':vv['variant_id'],'classification_boundary':'NOT_APPLICABLE_FROZEN','holdout_read':True
+              },indent=2,sort_keys=True)+'\n')
+          PY
+          python raw/scored/scored_probe.py
+
+      - name: Build and verify scored artifact manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd raw/scored && find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
+          (cd raw/scored && sha256sum -c SHA256SUMS.txt)
+
+      - name: Upload scored evidence artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage008b-provenrail-scored-v1
+          path: raw/scored
+          if-no-files-found: error
+          include-hidden-files: false
