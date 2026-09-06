@@ -1,0 +1,25 @@
+{
+  "schema": "metablooms.stage008b.orion_harness_v2.calibration_fixture.v1",
+  "benchmark_id": "CVB-007-20260905",
+  "fixture_id": "ORION_HARNESS_V2_CALIBRATION_001",
+  "fixture_mode": "CALIBRATION_ONLY_NOT_SCOREABLE",
+  "competitor_pin": "9b9e9567305122d439727989b3633abc05183bce",
+  "frozen_authority": {
+    "stage007_markdown_sha256": "c741199270699f6696ab075fa5389b8bd6938d726a14bc43c9c892a6f5f2751e",
+    "stage007_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+    "original_stage008_orion_adapter_sha256": "3a4d55999c6a0f549f96c585d7174cea0337c079cfed5c996148bff5eb366a57"
+  },
+  "tokens": {
+    "r0": "ORION_CAL_R0_7f1a20b3",
+    "r1": "ORION_CAL_R1_293cc8ea",
+    "a0": "ORION_CAL_A0_4ee1d217",
+    "a1": "ORION_CAL_A1_c2b0759d",
+    "c0": "ORION_CAL_C0_987f10ab",
+    "c1": "ORION_CAL_C1_36d85c71",
+    "q0": "ORION_CAL_Q0_d153e52c",
+    "q1": "ORION_CAL_Q1_801acba3",
+    "d0": "ORION_CAL_D0_c799a5b4",
+    "d1": "ORION_CAL_D1_44e0219f"
+  },
+  "warning": "Calibration fixture only. It must never be reported as a scored CVB-007 Orion result. The previously exposed V1 scored holdout is retired for future Orion scoring; freeze a new unseen holdout only after this architecture validates."
+}
