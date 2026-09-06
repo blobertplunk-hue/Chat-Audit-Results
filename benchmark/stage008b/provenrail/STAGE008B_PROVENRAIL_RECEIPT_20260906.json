@@ -1,0 +1,44 @@
+{
+  "schema": "metablooms.commercial_validation.stage_receipt.v1",
+  "stage": "STAGE008B_PROVENRAIL_FORMAL_ADJUDICATION_COMPLETE",
+  "status": "COMPLETE",
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": "Provenrail",
+  "pin": "b4b890699f859b2cbf607bb871daea0821679aaf",
+  "version": "0.2.33",
+  "calibration": {
+    "run_id": 34058999746,
+    "artifact_id": 9996858180,
+    "artifact_sha256": "b2ca770006a1538a600333fda0586677527068162bb76aaffb340e5391ed9202",
+    "native_tests": "34 passed, 1 warning"
+  },
+  "holdout": {
+    "freeze_commit": "e0b0191920913efb4c97c8232fa64801eb47851d",
+    "sha256": "e888be10782334ed412652a7f9d56f4799c41da23735793bd2e304a8d62b31c2"
+  },
+  "scored": {
+    "run_id": 34059179376,
+    "head_sha": "8fa26d9414f3ba629011d95ab18388f8cb0bf546",
+    "artifact_id": 9996912336,
+    "artifact_sha256": "fb0e9cffe13ace25088dae30646881254b7454aa69cf8b65a7668aab1de327ec",
+    "internal_manifest": "PASS_ZERO_MISMATCH"
+  },
+  "scenario_results": {
+    "S0": "NOT_APPLICABLE",
+    "S1": "NOT_APPLICABLE",
+    "S2": "PARTIAL",
+    "S3": "NOT_APPLICABLE",
+    "S4": "NOT_APPLICABLE",
+    "S5": "FAIL",
+    "S6": "NOT_APPLICABLE"
+  },
+  "integrated_verdict": "NOT_END_TO_END",
+  "result_json_sha256": "1a940b4dd3917e2c3f3401a985dfbccbdd93a51e1314a2c8fe97084ed13ab511",
+  "result_md_sha256": "ca62938c7c64e4351e7837d8a9811416b21e715c0ab8f4c1e016a9c01c464b9e",
+  "improvement_notes_sha256": "f6ad64b31a59633e9a452073e84053e250b4c2857a2f2cf81f033d7ddbfdbe58",
+  "metablooms_stage009_self_run_performed": false,
+  "stage010_differentiation_adjudication_performed": false,
+  "next_action": "Execute Evidence Gate Stage008B under unchanged frozen authority.",
+  "chat_url": "https://chatgpt.com/g/g-p-689c74a1b2c881919eef34000e072573-metabrain/c/6a9db5b7-18f0-83e9-ba2c-4c194f4f4471",
+  "created_at_utc": "2026-09-06T20:54:45Z"
+}
