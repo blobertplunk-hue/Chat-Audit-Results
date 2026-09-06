@@ -1,0 +1,14 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": "CASP",
+  "competitor_pin": "592a253cc16f346edf8537f4c40e4a90dceadc91",
+  "variant_id": "V1_REPOSITORY_CHANGE_CASP_HOLDOUT_001",
+  "perturbation_family": "V1_REPOSITORY_CHANGE",
+  "change": {
+    "path": "src/continuity/holdout-transition.txt",
+    "content": "trusted baseline changed after the prior durable state record; holdout token c7e5946d\n"
+  },
+  "frozen_adapter_sha256": "d6cd96aec65393f8368a79e767c63c5e72db2c682b9dcbd580d982fe647f37f7",
+  "scored_expectation_source": "Stage007 frozen scenario semantics",
+  "constraint": "Adapter semantics and decision mapping may not change after this holdout is frozen. The runner may only consume this fixture generically."
+}
