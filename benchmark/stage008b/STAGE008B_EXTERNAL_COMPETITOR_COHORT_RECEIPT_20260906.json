@@ -1,0 +1,38 @@
+{
+  "benchmark_hashes": {
+    "id": "CVB-007-20260905",
+    "json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+    "md_sha256": "c741199270699f6696ab075fa5389b8bd6938d726a14bc43c9c892a6f5f2751e",
+    "result_schema_sha256": "68101fa8cde944768831e687104c25afd871aab87df547d43baa31eda32d4254"
+  },
+  "benchmark_id": "CVB-007-20260905",
+  "completed_competitor_count": 9,
+  "created_at_utc": "2026-09-06T21:27:16.424773Z",
+  "improvement_notes": {
+    "count": 19,
+    "path": "METABLOOMS_IMPROVEMENT_NOTES_COMMERCIAL_VALIDATION_20260906.md",
+    "sha256": "5edd2d892b181a4cca96327cc723def73160cef9c85b41cf40754d4069bfc4bb",
+    "status": "DURABLE_EXTERNAL_NOTES_INCLUDED_IN_CONTINUATION"
+  },
+  "metablooms_stage009_self_run_performed": false,
+  "next_action": "Run MetaBlooms Stage009 self-run against unchanged CVB-007-20260905. Only after Stage009 is terminal may Stage010 comparative differentiation be performed.",
+  "remaining_frozen_competitors": [],
+  "schema": "metablooms.commercial_validation.external_cohort_receipt.v1",
+  "stage": "STAGE008B_EXTERNAL_COMPETITOR_COHORT_COMPLETE",
+  "stage010_differentiation_adjudication_performed": false,
+  "status": "COMPLETE_WITH_DOCUMENTED_LIMITATIONS",
+  "superiority_claim_authorized": false,
+  "terminal_additions": {
+    "Evidence Gate": {
+      "integrated_verdict": "FAIL_INTEGRATED",
+      "latest_path": "benchmark/stage008b/evidence-gate/LATEST.json",
+      "provider_head": "b8ac9aaaed4f8b0622b871661335528d04da8cf9"
+    },
+    "Pushgate": {
+      "integrated_verdict": "NOT_END_TO_END",
+      "latest_path": "benchmark/stage008b/pushgate/LATEST.json",
+      "provider_head": "b19d1bc55137e1579c53b383d5dbd6d2fb2bf881",
+      "runtime_limitation": "UNAVAILABLE_NO_TENANT_CREDENTIAL_OR_REPOSITORY_REMOTE"
+    }
+  }
+}
