@@ -45,7 +45,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sed '/^  instructions: \[\]$/d' benchmark/stage008b/agents-shipgate/run.sh > /tmp/run-shipgate-fixed.sh
+          ACCOUNT_HOME="$(python3 -c 'import os,pwd; print(pwd.getpwuid(os.getuid()).pw_dir)')"
+          sed '/^  instructions: \[\]$/d' benchmark/stage008b/agents-shipgate/run.sh \
+            | sed "s|^POLICY=.*|POLICY=\"$ACCOUNT_HOME/.config/agents-shipgate/human-authorization-trust-policy.json\"|" \
+            > /tmp/run-shipgate-fixed.sh
           bash /tmp/run-shipgate-fixed.sh /tmp/agents-shipgate-src /tmp/agents-shipgate-venv
 
       - name: Upload raw benchmark evidence
