@@ -1,0 +1,28 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "cohort_handoff_sha256": "59d9af27a619d64b28c6064771b75dfff6622eb137849558045d5d7f7eb35aac",
+  "cohort_receipt_sha256": "98f432cc8b8a11dada05411c286ee78387d475ad0ae1936bb82182f9133cbcea",
+  "continuation_state_sha256": "d14d5a4a90c3c8e2eeaf59bebd5ea00c0a5bfe77e73ae2379460bc25997457b4",
+  "evidence_gate": {
+    "integrated_verdict": "FAIL_INTEGRATED",
+    "latest_path": "benchmark/stage008b/evidence-gate/LATEST.json",
+    "terminal_head": "b8ac9aaaed4f8b0622b871661335528d04da8cf9"
+  },
+  "external_competitor_count": 9,
+  "metablooms_improvement_note_count": 19,
+  "metablooms_improvement_notes_sha256": "5edd2d892b181a4cca96327cc723def73160cef9c85b41cf40754d4069bfc4bb",
+  "metablooms_stage009_self_run_performed": false,
+  "next_action": "Run MetaBlooms Stage009 self-run against unchanged CVB-007-20260905. Only after Stage009 is terminal may Stage010 comparative differentiation be performed.",
+  "pushgate": {
+    "integrated_verdict": "NOT_END_TO_END",
+    "latest_path": "benchmark/stage008b/pushgate/LATEST.json",
+    "runtime_access_qualification": "UNAVAILABLE_NO_TENANT_CREDENTIAL_OR_REPOSITORY_REMOTE",
+    "terminal_head": "b19d1bc55137e1579c53b383d5dbd6d2fb2bf881"
+  },
+  "remaining_frozen_competitors": [],
+  "schema": "metablooms.commercial_validation.external_cohort_latest.v1",
+  "stage010_differentiation_adjudication_performed": false,
+  "status": "COMPLETE_WITH_DOCUMENTED_LIMITATIONS",
+  "superiority_claim_authorized": false,
+  "terminal_stage": "STAGE008B_EXTERNAL_COMPETITOR_COHORT_COMPLETE"
+}
