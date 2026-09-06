@@ -59,10 +59,10 @@ jobs:
             rm -rf "$d"; mkdir -p "$d" "$logdir"
             export ORION_DATA_DIR="$d"
             printf '%s\n' "$intent" | /tmp/orion submit --non-interactive >"$logdir/submit.stdout" 2>"$logdir/submit.stderr"; echo $? >"$logdir/submit.rc"
-            /tmp/orion answer response_format json >"$logdir/answer-format.stdout" 2>"$logdir/answer-format.stderr"; echo $? >"$logdir/answer-format.rc"
-            /tmp/orion answer timezone UTC >"$logdir/answer-timezone.stdout" 2>"$logdir/answer-timezone.stderr"; echo $? >"$logdir/answer-timezone.rc"
-            /tmp/orion answer port 8080 >"$logdir/answer-port.stdout" 2>"$logdir/answer-port.stderr"; echo $? >"$logdir/answer-port.rc"
-            /tmp/orion answer route /time >"$logdir/answer-route.stdout" 2>"$logdir/answer-route.stderr"; echo $? >"$logdir/answer-route.rc"
+            /tmp/orion answer --key response_format --value json >"$logdir/answer-format.stdout" 2>"$logdir/answer-format.stderr"; echo $? >"$logdir/answer-format.rc"
+            /tmp/orion answer --key timezone --value UTC >"$logdir/answer-timezone.stdout" 2>"$logdir/answer-timezone.stderr"; echo $? >"$logdir/answer-timezone.rc"
+            /tmp/orion answer --key port --value 8080 >"$logdir/answer-port.stdout" 2>"$logdir/answer-port.stderr"; echo $? >"$logdir/answer-port.rc"
+            /tmp/orion answer --key route --value /time >"$logdir/answer-route.stdout" 2>"$logdir/answer-route.stderr"; echo $? >"$logdir/answer-route.rc"
             /tmp/orion spec show >"$logdir/spec-preapprove.stdout" 2>"$logdir/spec-preapprove.stderr"; echo $? >"$logdir/spec-preapprove.rc"
             /tmp/orion spec approve >"$logdir/spec-approve.stdout" 2>"$logdir/spec-approve.stderr"; echo $? >"$logdir/spec-approve.rc"
             /tmp/orion plan show --json >"$logdir/plan-initial.json" 2>"$logdir/plan-initial.stderr"; echo $? >"$logdir/plan-initial.rc"
@@ -83,7 +83,7 @@ jobs:
           /tmp/orion-probe mismatch /tmp/orion-s136 "$OUT/s136/s4-mismatch.json" ORION_C1_a7d9054c >"$OUT/s136/s4-mismatch.stdout" 2>"$OUT/s136/s4-mismatch.stderr"
 
           # Changed governing reality after Q0: a previously fallback reliability decision becomes explicit.
-          /tmp/orion answer oncall_escalation "team-omega ORION_A1_82d4e590" >"$OUT/s136/change-authority.stdout" 2>"$OUT/s136/change-authority.stderr"; echo $? >"$OUT/s136/change-authority.rc"
+          /tmp/orion answer --key oncall_escalation --value "team-omega ORION_A1_82d4e590" >"$OUT/s136/change-authority.stdout" 2>"$OUT/s136/change-authority.stderr"; echo $? >"$OUT/s136/change-authority.rc"
           /tmp/orion spec show >"$OUT/s136/spec-after-authority-change.stdout" 2>"$OUT/s136/spec-after-authority-change.stderr"; echo $? >"$OUT/s136/spec-after-authority-change.rc"
 
           # Fresh process attempts to continue with stale Q0/A0. Expected native refusal before delivery.
