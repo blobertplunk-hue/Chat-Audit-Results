@@ -1,0 +1,27 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "benchmark_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+  "competitor": {"mode":"HOSTED_EXTERNAL","name":"Pushgate","pin_type":"documentation_snapshot","reported_version":"Early-access hosted product; no public source/product version identified","retrieved_at":"2026-09-05T20:26:00-05:00"},
+  "created_at_utc": "2026-09-06T21:23:34.597527Z",
+  "evidence_limits": ["No Pushgate/TestifySec/CI-lock credential was present in the execution environment.","No repository-specific Pushgate Git remote was present.","The public documentation checked on 2026-09-06 is current support evidence; Stage008 pinned only a 2026-09-05 documentation timestamp rather than immutable page-body hashes.","No account creation, repository connection, credential provisioning, or provider mutation was performed."],
+  "external_competitor_cohort_status": "SUFFICIENTLY_CLOSED_WITH_DOCUMENTED_NOT_VERIFIED_PROVIDER_RUNTIME",
+  "holdout": {"freeze_commit":"dfa8b3e5f0495ebc42110daaf452f86c6ad3a547","frozen_before_runtime_qualification":true,"sha256":"737ddf230a3226915050dcdbea73dc64c13031f516df3d9410dab96a328803e9"},
+  "improvement_notes_sha256": "5edd2d892b181a4cca96327cc723def73160cef9c85b41cf40754d4069bfc4bb",
+  "integrated_verdict": "NOT_END_TO_END",
+  "integrated_verdict_reason": "Pushgate is intentionally scoped to a Git-push admission layer, leaving S2 and S3 materially NOT_APPLICABLE. All applicable runtime scenarios remain NOT_VERIFIED because the frozen hosted product required tenant credentials and a repository-specific remote that were absent. Public documentation supports applicability and expected-contract mapping but is not substituted for runtime PASS evidence.",
+  "meta_boundaries": {"metablooms_stage009_self_run_performed":false,"stage010_differentiation_adjudication_performed":false,"superiority_claim_authorized":false},
+  "next_action": "Run MetaBlooms Stage009 against unchanged CVB-007-20260905; then perform Stage010 comparative differentiation only after Stage009 is terminal.",
+  "public_contract_observations": ["Public docs state that Pushgate verifies proof attached to an exact Git commit before forwarding to GitHub.","Public docs state that a usable signed decision binds tenant, canonical repository route, immutable repository ID, commit, fresh push nonce/scope, exact policy authority/digest, outcome, and evidence descriptors.","Public docs state that evidence for one commit is not replayed as evidence for another.","Repository-specific runtime commands/remotes are generated after connecting a repository; no such remote existed in this lane."],
+  "result_schema_sha256": "68101fa8cde944768831e687104c25afd871aab87df547d43baa31eda32d4254",
+  "runtime_access": {"credential_env_present":false,"qualification":"UNAVAILABLE_NO_TENANT_CREDENTIAL_OR_REPOSITORY_REMOTE","qualification_sha256":"f049c64c14757d50f69e40e71b15f9c55cdc4b76669aeaee7ce1aad1076b4b81","repository_specific_remote_present":false},
+  "scenario_results": {
+    "S0":{"classification":"NOT_VERIFIED","decision_reason":"The valid-proof positive-control path requires a connected Pushgate repository remote and provider policy/evidence runtime. Public docs describe it, but no tenant credential/remote was available to execute it.","observed_decision":"NO_DECISION"},
+    "S1":{"classification":"NOT_VERIFIED","decision_reason":"Docs make current push/ref context relevant, but stale-baseline rejection could not be reproduced without provider runtime.","observed_decision":"NO_DECISION"},
+    "S2":{"classification":"NOT_APPLICABLE","decision_reason":"Frozen Stage008 applicability excludes independent task-authorization lease/revocation semantics.","observed_decision":"NO_DECISION"},
+    "S3":{"classification":"NOT_APPLICABLE","decision_reason":"Frozen Stage008 applicability excludes cross-session coding-work recovery.","observed_decision":"NO_DECISION"},
+    "S4":{"classification":"NOT_VERIFIED","decision_reason":"Docs explicitly claim exact commit binding and no evidence replay across commits, but the wrong-candidate runtime transition could not be executed without a repository-specific Pushgate remote.","observed_decision":"NO_DECISION"},
+    "S5":{"classification":"NOT_VERIFIED","decision_reason":"Signed VSA/policy-decision contracts are documented, but current-vs-superseded decision lineage could not be exercised without provider runtime.","observed_decision":"NO_DECISION"},
+    "S6":{"classification":"NOT_VERIFIED","decision_reason":"Docs describe retry with valid current proof, but the fresh-corrected positive-control path could not be executed without provider access.","observed_decision":"NO_DECISION"}
+  },
+  "stage": "STAGE008B_PUSHGATE_HOSTED_RUNTIME_QUALIFICATION_COMPLETE"
+}
