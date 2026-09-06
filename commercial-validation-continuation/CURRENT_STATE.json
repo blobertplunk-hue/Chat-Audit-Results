@@ -1,0 +1,42 @@
+{
+  "benchmark": {
+    "id": "CVB-007-20260905",
+    "json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+    "md_sha256": "c741199270699f6696ab075fa5389b8bd6938d726a14bc43c9c892a6f5f2751e",
+    "result_schema_sha256": "68101fa8cde944768831e687104c25afd871aab87df547d43baa31eda32d4254"
+  },
+  "boundaries": [
+    "Do not change CVB-007 semantics after competitor results.",
+    "Preserve NOT_APPLICABLE and NOT_VERIFIED semantics.",
+    "Do not run MetaBlooms Stage009 until competitor cohort is sufficiently closed.",
+    "Do not make superiority/uniqueness claims before Stage010.",
+    "V1 Orion holdout is retired; V2 scored evidence is authoritative."
+  ],
+  "completed_competitors": {
+    "Agents Shipgate": {"S0":"PASS","S1":"PASS","S2":"PASS","S3":"NOT_APPLICABLE","S4":"PASS","S5":"NOT_APPLICABLE","S6":"PARTIAL","integrated":"NOT_END_TO_END"},
+    "CASP": {"S0":"PARTIAL","S1":"FAIL","S2":"NOT_VERIFIED","S3":"FAIL","S4":"NOT_APPLICABLE","S5":"NOT_VERIFIED","S6":"PARTIAL"},
+    "CSM / AgentBook": {"S0":"NOT_APPLICABLE","S1":"PARTIAL","S2":"NOT_APPLICABLE","S3":"PARTIAL","S4":"NOT_APPLICABLE","S5":"PARTIAL","S6":"NOT_APPLICABLE","integrated":"NOT_END_TO_END"},
+    "Revelara Orion": {"S0":"PASS","S1":"PASS","S2":"PASS","S3":"PASS","S4":"PARTIAL","S5":"PARTIAL","S6":"PASS","integrated":"PARTIAL_INTEGRATED"},
+    "ae-framework": {"S0":"PASS","S1":"PASS","S2":"PASS","S3":"PASS","S4":"PASS","S5":"PARTIAL","S6":"PARTIAL","integrated":"PARTIAL_INTEGRATED"}
+  },
+  "current_stage": "STAGE008B_REVELARA_ORION_FORMAL_ADJUDICATION_COMPLETE",
+  "github": {
+    "evidence_repo": "blobertplunk-hue/Chat-Audit-Results",
+    "orion_calibration_branch": "benchmark/stage008b-revelara-orion-harness-v2-20260906",
+    "orion_scored_branch": "benchmark/stage008b-revelara-orion-scored-v2-20260906",
+    "continuation_branch": "continuity/metablooms-commercial-validation-orion-20260906"
+  },
+  "metablooms_stage009_self_run_performed": false,
+  "next_action": "Execute AgentAction Stage008B under unchanged CVB-007 and frozen Stage008 pin/applicability; then Provenrail, Evidence Gate, Pushgate. Do not run MetaBlooms Stage009 yet.",
+  "orion": {
+    "harness_commit": "9eecac3f1e3929070ea97c596ef2b60def301fc8",
+    "holdout_commit": "99aafe257401013187877b2e3a70d5fd785015cb",
+    "integrated": "PARTIAL_INTEGRATED",
+    "pin": "9b9e9567305122d439727989b3633abc05183bce",
+    "raw_artifact_sha256": "ba0f563e418ad1b01adac6912e85d18b542e89e28e10ea7ab59c285e1149472b",
+    "workflow_run_id": 34046446999
+  },
+  "remaining_frozen_competitors": ["AgentAction","Provenrail","Evidence Gate","Pushgate"],
+  "schema": "metablooms.commercial_validation.continuation.v1",
+  "stage010_differentiation_adjudication_performed": false
+}
