@@ -1,0 +1,33 @@
+version: "0.1"
+project:
+  name: stage008b-authorization-integration
+agent:
+  name: empty-test-agent
+  declared_purpose:
+    - exercise verifier authorization integration
+environment:
+  target: local
+tool_sources:
+  - id: docs_tools
+    type: mcp
+    path: tools.json
+agent_bindings:
+  declarations:
+    - agent: root
+      complete: true
+      tools:
+        - {tool: docs.lookup, source_id: docs_tools}
+      handoffs: []
+      reason: reviewed local integration-test binding
+permissions:
+  scopes:
+    - docs:read
+action_surface:
+  actions:
+    - tool: docs.lookup
+      effect: read
+      scopes: [docs:read]
+      authority:
+        mode: scoped
+        auth_type: oauth2
+        credential_mode: delegated

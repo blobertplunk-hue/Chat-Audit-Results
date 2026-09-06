@@ -1,0 +1,17 @@
+{
+  "tools": [
+    {
+      "name": "docs.lookup",
+      "description": "Look up metadata for one existing documentation article.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {"article_id": {"type": "string"}},
+        "required": ["article_id"],
+        "additionalProperties": false
+      },
+      "annotations": {"readOnlyHint": true},
+      "auth": {"type": "oauth2", "scopes": ["docs:read"]},
+      "owner": "docs-platform"
+    }
+  ]
+}
