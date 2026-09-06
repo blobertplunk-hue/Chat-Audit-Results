@@ -1,0 +1,22 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": "CSM / AgentBook",
+  "competitor_pin": "4361d38de8672cffe06086e32b91ed41e73e100b",
+  "variant_id": "V1_AGENTBOOK_COLD_REENTRY_AND_SUPERSESSION_001",
+  "perturbation_family": "V1_REPOSITORY_CHANGE",
+  "project_id": "metablooms-cvb007-csm-holdout",
+  "baseline": {
+    "workspace_path": "workspace/current-state.txt",
+    "r0_content": "R0 current workspace state; holdout token a1c58d77\n",
+    "r1_content": "R1 external workspace changed after interruption; holdout token f47e2b90\n"
+  },
+  "historical_decisions": {
+    "d0_summary": "D0 keep baseline R0 after verification; holdout token 38b5c4d2",
+    "d1_summary": "D1 superseding decision after changed reality; holdout token c790ed61"
+  },
+  "frozen_adapter_sha256": "79f853c53f9dc30ae034789f216335e810fffa63510c1f15716f391721bb96ef",
+  "benchmark_markdown_sha256": "c741199270699f6696ab075fa5389b8bd6938d726a14bc43c9c892a6f5f2751e",
+  "benchmark_json_sha256": "0aa90310f9b31a353161fc2e83bd1d93f37d70bee031523db679d0b1c7adb238",
+  "scored_scenarios": ["S1", "S3", "S5"],
+  "constraint": "The scored harness may consume these perturbations but may not change the frozen adapter decision mapping, applicability, or Stage007 scenario semantics after this commit. Git/live-workspace inspection counts only when exercised through CSM's documented AgentBook re-entry workflow; harness-side comparison alone is not a CSM capability."
+}
