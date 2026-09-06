@@ -44,6 +44,14 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm --filter @ae-framework/core run build
 
+      - name: Seed documented handoff prerequisite
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ae-framework-src/artifacts/agents
+          cp /tmp/ae-framework-src/fixtures/agents/sample.hook-feedback.json \
+            /tmp/ae-framework-src/artifacts/agents/hook-feedback.json
+
       - name: Execute frozen scored benchmark
         shell: bash
         run: |
