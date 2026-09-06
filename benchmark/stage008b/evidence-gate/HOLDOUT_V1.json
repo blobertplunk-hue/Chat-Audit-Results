@@ -1,0 +1,58 @@
+{
+  "benchmark_id": "CVB-007-20260905",
+  "competitor": {
+    "mode": "FREE_LOCAL_PINNED",
+    "name": "Evidence Gate",
+    "pin": "3f478e1f3d3c5050725f15ecf9cdb4ff5eb9ea75"
+  },
+  "derivation": {
+    "method": "deterministic_sha256_labels",
+    "seed_material": "benchmark_id|competitor_pin|EVIDENCE_GATE_HOLDOUT_V1",
+    "seed_sha256": "cba7da1d5086c4e8f475e2a948a3653a8553eb27f585593677659bded3b550fe"
+  },
+  "freeze_contract": {
+    "calibration_is_not_holdout": true,
+    "no_adapter_tuning_after_freeze": true,
+    "no_fixture_mutation_after_freeze": true,
+    "scored_assertions_are_setup_only": true,
+    "scored_harness_must_read_this_fixture": true
+  },
+  "schema": "metablooms.stage008b.evidence_gate.holdout.v1",
+  "shared": {
+    "baseline_g0": "G0-afde4766db",
+    "baseline_g1": "G1-3855139a8d",
+    "candidate_c0_sha256": "aa40c928ffe3b9010493c07e8556db53ef2d25d1b2810f9b70a2fa60a9cc9a57",
+    "candidate_c1_sha256": "5d82fcd8432b554a21ccb2d33e3514e576af3cfe215e05490c65a600237287ff",
+    "phase_prefix": "eg-85ac92aa"
+  },
+  "variants": {
+    "S0": {
+      "transition": "Present valid current C0 provenance evidence to the pinned free local provenance evaluator.",
+      "variant_id": "EG-H1-S0-32a6180e"
+    },
+    "S1": {
+      "transition": "Evaluate C0 evidence under G0, then make G1 the external current baseline and present unchanged G0/C0 evidence again without changing its bytes.",
+      "variant_id": "EG-H1-S1-8754d089"
+    },
+    "S2": {
+      "applicability": "NOT_APPLICABLE",
+      "variant_id": "EG-H1-S2-e83461a5"
+    },
+    "S3": {
+      "applicability": "NOT_APPLICABLE",
+      "variant_id": "EG-H1-S3-d9549331"
+    },
+    "S4": {
+      "transition": "Set C1 as the externally expected candidate while presenting a structurally valid provenance statement whose subject digest remains C0.",
+      "variant_id": "EG-H1-S4-0cb32e85"
+    },
+    "S5": {
+      "transition": "Record D0 as a passing local evaluation, then D1 as a later failing same-scope evaluation, then present D0 bytes again; capture local behavior and separately note hosted evidence-chain behavior is credential-gated.",
+      "variant_id": "EG-H1-S5-1feaf99c"
+    },
+    "S6": {
+      "transition": "After a failed stale/missing proof attempt, present fresh structurally valid C1 provenance evidence.",
+      "variant_id": "EG-H1-S6-e5850596"
+    }
+  }
+}
